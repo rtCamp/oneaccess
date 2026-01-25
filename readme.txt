@@ -4,7 +4,7 @@ Donate link: https://rtcamp.com/
 Tags: OneAccess, OnePress, User Manager, Multi-site, Enterprise User Management
 Requires at least: 6.8
 Tested up to: 6.9
-Stable tag: 1.1.0-beta.1
+Stable tag: 1.1.0
 Requires PHP: 8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -124,17 +124,7 @@ OneAccess creates two custom roles: Network Admin (for governing site administra
 
 == Changelog ==
 
-= 1.0.0-beta =
-* Initial release
-* Centralized user management dashboard
-* Multi-site user creation and role assignment
-* Profile request approval workflow
-* Secure API communication with nonce validation
-* Custom user roles (Network Admin, Brand Admin)
-* Bulk user operations
-* Site-selective user management
-* Password strength validation and generation
-* Real-time user synchronization
+See <a href="https://github.com/rtCamp/OneAccess/blob/main/CHANGELOG.md" target="_blank">CHANGELOG.md</a> for detailed changelog.
 
 == Upgrade Notice ==
 
