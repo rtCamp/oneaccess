@@ -1,8 +1,9 @@
 # Changelog
 
-## 1.1.0-beta.1
+## 1.1.0
 
-- Feat: Refactor for WPCS and best practices
+- feat: Refactor for WPCS and best practices.
+- chore: Update dependencies to their latest (compatible) versions.
 
 ## 1.0.0-beta
 

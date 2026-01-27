@@ -335,7 +335,7 @@ final class Settings implements Registrable {
 
 		$api_key = ! empty( $api_key ) ? Encryptor::decrypt( $api_key ) : self::regenerate_api_key();
 
-		return $api_key;
+		return $api_key ?: '';
 	}
 
 	/**
