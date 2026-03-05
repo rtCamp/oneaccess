@@ -1,9 +1,5 @@
 # Changelog
 
-## 1.1.2
-
-- Feat: update NPM dependencies
-
 ## 1.1.1
 
 - Feat: update Composer and NPM dependencies
