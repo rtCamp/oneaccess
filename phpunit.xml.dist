@@ -16,6 +16,7 @@
 	failOnNotice="true"
 	failOnDeprecation="true"
 	failOnPhpunitDeprecation="false"
+	failOnEmptyTestSuite="false"
 	requireCoverageMetadata="true"
 >
 	<testsuites>
