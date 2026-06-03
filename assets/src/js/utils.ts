@@ -5,7 +5,7 @@
  *
  * @return {boolean} True if the string is a valid URL, false otherwise.
  */
-const isURL = ( str : string ) : boolean => {
+const isURL = ( str: string ): boolean => {
 	try {
 		new URL( str );
 		return true;
@@ -21,7 +21,7 @@ const isURL = ( str : string ) : boolean => {
  *
  * @return {boolean} True if the URL is valid, false otherwise.
  */
-const isValidUrl = ( url:string ):boolean => {
+const isValidUrl = ( url: string ): boolean => {
 	try {
 		const parsedUrl = new URL( url );
 		return isURL( parsedUrl.href );
@@ -37,7 +37,7 @@ const isValidUrl = ( url:string ):boolean => {
  *
  * @return {boolean} True if the email is valid, false otherwise.
  */
-const isValidEmail = ( email:string ):boolean => {
+const isValidEmail = ( email: string ): boolean => {
 	const pattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 	return pattern.test( email );
 };
@@ -50,11 +50,21 @@ const isValidEmail = ( email:string ):boolean => {
  * @return {string} The strength of the password: 'very-weak', 'weak', 'medium', or 'strong'.
  */
 
-const checkPasswordStrength = ( password:string ):string => {
+const checkPasswordStrength = ( password: string ): string => {
 	let strength = 'weak';
-	if ( password.length >= 12 && /[A-Z]/.test( password ) && /[0-9]/.test( password ) && /[^A-Za-z0-9]/.test( password ) ) {
+	if (
+		password.length >= 12 &&
+		/[A-Z]/.test( password ) &&
+		/[0-9]/.test( password ) &&
+		/[^A-Za-z0-9]/.test( password )
+	) {
 		strength = 'strong';
-	} else if ( password.length >= 8 && /[A-Z]/.test( password ) && /[a-z]/.test( password ) && /[0-9]/.test( password ) ) {
+	} else if (
+		password.length >= 8 &&
+		/[A-Z]/.test( password ) &&
+		/[a-z]/.test( password ) &&
+		/[0-9]/.test( password )
+	) {
 		strength = 'medium';
 	} else if ( password.length >= 8 ) {
 		strength = 'weak';
@@ -85,7 +95,7 @@ const strengthWidths = {
  * @return {string} The color code associated with the password strength.
  */
 
-const getStrengthColor = ( passwordStrength:string ):string => {
+const getStrengthColor = ( passwordStrength: string ): string => {
 	switch ( passwordStrength ) {
 		case 'very-weak':
 			return '#dc3545';

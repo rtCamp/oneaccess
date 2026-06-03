@@ -2,25 +2,39 @@
  * WordPress dependencies
  */
 import { useState } from '@wordpress/element';
-import { Button, Card, CardHeader, CardBody, Modal } from '@wordpress/components';
+import {
+	Button,
+	Card,
+	CardHeader,
+	CardBody,
+	Modal,
+} from '@wordpress/components';
 import { __ } from '@wordpress/i18n';
+/**
+ * External dependencies
+ */
 import type { BrandSite, EditingIndex } from '@/admin/settings/page';
 
 interface SiteTableProps {
 	sites: BrandSite[];
 	onEdit: ( index: number ) => void;
-	onDelete: ( index: number|null ) => void;
+	onDelete: ( index: number | null ) => void;
 	setFormData: ( data: BrandSite ) => void;
 	setShowModal: ( show: boolean ) => void;
 }
 
-const SiteTable = (
-	{ sites, onEdit, onDelete, setFormData, setShowModal } : SiteTableProps,
-) => {
-	const [ showDeleteModal, setShowDeleteModal ] = useState< boolean >( false );
+const SiteTable = ( {
+	sites,
+	onEdit,
+	onDelete,
+	setFormData,
+	setShowModal,
+}: SiteTableProps ) => {
+	const [ showDeleteModal, setShowDeleteModal ] =
+		useState< boolean >( false );
 	const [ deleteIndex, setDeleteIndex ] = useState< EditingIndex >( null );
 
-	const handleDeleteClick = ( index:number ) => {
+	const handleDeleteClick = ( index: number ) => {
 		setDeleteIndex( index );
 		setShowDeleteModal( true );
 	};
@@ -49,7 +63,10 @@ const SiteTable = (
 				</Button>
 			</CardHeader>
 			<CardBody>
-				<table className="wp-list-table widefat fixed striped " style={ { marginTop: '16px' } }>
+				<table
+					className="wp-list-table widefat fixed striped "
+					style={ { marginTop: '16px' } }
+				>
 					<thead>
 						<tr>
 							<th>{ __( 'Site Name', 'oneaccess' ) }</th>
@@ -61,8 +78,14 @@ const SiteTable = (
 					<tbody>
 						{ sites.length === 0 && (
 							<tr>
-								<td colSpan={ 4 } style={ { textAlign: 'center' } }>
-									{ __( 'No Brand Sites found.', 'oneaccess' ) }
+								<td
+									colSpan={ 4 }
+									style={ { textAlign: 'center' } }
+								>
+									{ __(
+										'No Brand Sites found.',
+										'oneaccess'
+									) }
 								</td>
 							</tr>
 						) }
@@ -70,7 +93,11 @@ const SiteTable = (
 							<tr key={ index }>
 								<td>{ site?.name }</td>
 								<td>{ site?.url }</td>
-								<td><code>{ site?.api_key?.substring( 0, 10 ) }...</code></td>
+								<td>
+									<code>
+										{ site?.api_key?.substring( 0, 10 ) }...
+									</code>
+								</td>
 								<td>
 									<Button
 										variant="secondary"
@@ -86,7 +113,9 @@ const SiteTable = (
 									<Button
 										variant="secondary"
 										isDestructive
-										onClick={ () => handleDeleteClick( index ) }
+										onClick={ () =>
+											handleDeleteClick( index )
+										}
 									>
 										{ __( 'Delete', 'oneaccess' ) }
 									</Button>
@@ -106,29 +135,37 @@ const SiteTable = (
 	);
 };
 
-const DeleteConfirmationModal = (
-	{ onConfirm, onCancel }
-	: { onConfirm: () => void; onCancel: () => void },
-) => (
+const DeleteConfirmationModal = ( {
+	onConfirm,
+	onCancel,
+}: {
+	onConfirm: () => void;
+	onCancel: () => void;
+} ) => (
 	<Modal
 		title={ __( 'Delete Brand Site', 'oneaccess' ) }
 		onRequestClose={ onCancel }
-		isDismissible={ true }
-		shouldCloseOnClickOutside={ true }
+		isDismissible
+		shouldCloseOnClickOutside
 	>
-		<p>{ __( 'Are you sure you want to delete this Brand Site? This action cannot be undone.', 'oneaccess' ) }</p>
-		<div style={ { display: 'flex', justifyContent: 'flex-end', marginTop: '20px', gap: '16px' } }>
-			<Button
-				variant="secondary"
-				onClick={ onCancel }
-			>
+		<p>
+			{ __(
+				'Are you sure you want to delete this Brand Site? This action cannot be undone.',
+				'oneaccess'
+			) }
+		</p>
+		<div
+			style={ {
+				display: 'flex',
+				justifyContent: 'flex-end',
+				marginTop: '20px',
+				gap: '16px',
+			} }
+		>
+			<Button variant="secondary" onClick={ onCancel }>
 				{ __( 'Cancel', 'oneaccess' ) }
 			</Button>
-			<Button
-				variant="primary"
-				isDestructive
-				onClick={ onConfirm }
-			>
+			<Button variant="primary" isDestructive onClick={ onConfirm }>
 				{ __( 'Delete', 'oneaccess' ) }
 			</Button>
 		</div>

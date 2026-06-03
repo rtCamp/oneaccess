@@ -19,16 +19,15 @@ const sharedConfig = {
 		filename: '[name].js',
 		chunkFilename: '[name].js',
 	},
-	plugins: [
-		...defaultConfig.plugins,
-		new RemoveEmptyScriptsPlugin(),
-	],
+	plugins: [ ...defaultConfig.plugins, new RemoveEmptyScriptsPlugin() ],
 	optimization: {
 		...defaultConfig.optimization,
 		splitChunks: {
 			...defaultConfig.optimization.splitChunks,
 		},
-		minimizer: defaultConfig.optimization.minimizer.concat( [ new CssMinimizerPlugin() ] ),
+		minimizer: defaultConfig.optimization.minimizer.concat( [
+			new CssMinimizerPlugin(),
+		] ),
 	},
 };
 
@@ -59,7 +58,8 @@ const styles = {
 	},
 	plugins: [
 		...sharedConfig.plugins.filter(
-			( plugin ) => plugin.constructor.name !== 'DependencyExtractionWebpackPlugin',
+			( plugin ) =>
+				plugin.constructor.name !== 'DependencyExtractionWebpackPlugin'
 		),
 	],
 };
@@ -68,11 +68,36 @@ const scripts = {
 	...sharedConfig,
 	entry: {
 		main: path.resolve( process.cwd(), 'assets', 'src', 'js', 'main.js' ),
-		'user-profile': path.resolve( process.cwd(), 'assets', 'src', 'js', 'user-profile.js' ),
+		'user-profile': path.resolve(
+			process.cwd(),
+			'assets',
+			'src',
+			'js',
+			'user-profile.js'
+		),
 		admin: path.resolve( process.cwd(), 'assets', 'src', 'js', 'admin.js' ),
-		settings: path.resolve( process.cwd(), 'assets', 'src', 'admin/settings', 'index.tsx' ),
-		onboarding: path.resolve( process.cwd(), 'assets', 'src', 'admin', 'onboarding', 'index.tsx' ),
-		'manage-users': path.resolve( process.cwd(), 'assets', 'src', 'admin/manage-users', 'index.js' ),
+		settings: path.resolve(
+			process.cwd(),
+			'assets',
+			'src',
+			'admin/settings',
+			'index.tsx'
+		),
+		onboarding: path.resolve(
+			process.cwd(),
+			'assets',
+			'src',
+			'admin',
+			'onboarding',
+			'index.tsx'
+		),
+		'manage-users': path.resolve(
+			process.cwd(),
+			'assets',
+			'src',
+			'admin/manage-users',
+			'index.js'
+		),
 	},
 	module: {
 		rules:

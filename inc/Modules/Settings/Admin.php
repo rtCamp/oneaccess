@@ -6,6 +6,8 @@
  * @package OneAccess
  */
 
+declare(strict_types = 1);
+
 namespace OneAccess\Modules\Settings;
 
 use OneAccess\Contracts\Interfaces\Registrable;
@@ -128,7 +130,7 @@ class Admin implements Registrable {
 	 * @param string     $classes Existing body classes.
 	 * @param \WP_Screen $current_screen Current screen object.
 	 */
-	private function add_body_class_for_missing_sites( string $classes, \WP_Screen $current_screen ): string {
+	private function add_body_class_for_missing_sites( string $classes, \WP_Screen $current_screen ): string { // phpcs:ignore SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter -- Required by WordPress hook signature.
 		// Bail if the shared sites are already set.
 		$shared_sites = Settings::get_shared_sites();
 		if ( ! empty( $shared_sites ) ) {

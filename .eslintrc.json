@@ -13,7 +13,7 @@
 	"settings": {
 		"import/resolver": {
 			"node": {
-				"extensions": [".js", ".jsx", ".ts", ".tsx"]
+				"extensions": [ ".js", ".jsx", ".ts", ".tsx" ]
 			}
 		}
 	},
@@ -33,14 +33,14 @@
 	},
 	"overrides": [
 		{
-			"files": ["**/*.{ts,tsx}"],
+			"files": [ "**/*.{ts,tsx}" ],
 			"parser": "@typescript-eslint/parser",
 			"parserOptions": {
 				"ecmaFeatures": { "jsx": true },
 				"sourceType": "module",
 				"project": "./tsconfig.json"
 			},
-			"plugins": ["@typescript-eslint"],
+			"plugins": [ "@typescript-eslint" ],
 			"rules": {
 				"no-undef": "off",
 				"no-unused-vars": "off",
@@ -53,7 +53,7 @@
 			}
 		},
 		{
-			"files": ["**/*.d.ts"],
+			"files": [ "**/*.d.ts" ],
 			"parser": "@typescript-eslint/parser",
 			"rules": {
 				"no-undef": "off",
@@ -68,7 +68,7 @@
 				"**/?(*.)test.js",
 				"tests/js/**/*.js"
 			],
-			"extends": ["plugin:jest/all"],
+			"extends": [ "plugin:jest/all" ],
 			"rules": {
 				// Add Rules for Jest here
 			}

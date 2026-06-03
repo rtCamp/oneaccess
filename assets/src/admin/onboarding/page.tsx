@@ -1,4 +1,10 @@
+/**
+ * External dependencies
+ */
 import { useState, useEffect } from 'react';
+/**
+ * WordPress dependencies
+ */
 import apiFetch from '@wordpress/api-fetch';
 import { __ } from '@wordpress/i18n';
 import {
@@ -20,7 +26,10 @@ interface NoticeState {
 	message: string;
 }
 
-const SiteTypeSelector = ( { value, setSiteType }: {
+const SiteTypeSelector = ( {
+	value,
+	setSiteType,
+}: {
 	value: SiteType | '';
 	setSiteType: ( v: SiteType | '' ) => void;
 } ) => (
@@ -29,7 +38,7 @@ const SiteTypeSelector = ( { value, setSiteType }: {
 		value={ value }
 		help={ __(
 			"Choose your site's primary purpose. This setting cannot be changed later and affects available features and configurations.",
-			'oneaccess',
+			'oneaccess'
 		) }
 		onChange={ ( v ) => {
 			setSiteType( v );
@@ -37,7 +46,10 @@ const SiteTypeSelector = ( { value, setSiteType }: {
 		options={ [
 			{ label: __( 'Select…', 'oneaccess' ), value: '' },
 			{ label: __( 'Brand Site', 'oneaccess' ), value: BRAND_SITE },
-			{ label: __( 'Governing site', 'oneaccess' ), value: GOVERNING_SITE },
+			{
+				label: __( 'Governing site', 'oneaccess' ),
+				value: GOVERNING_SITE,
+			},
 		] }
 	/>
 );
@@ -47,13 +59,17 @@ const OnboardingScreen = () => {
 	// eslint-disable-next-line camelcase
 	const { nonce, setup_url, site_type } = window.OneAccessOnboarding;
 
-	const [ siteType, setSiteType ] = useState<SiteType | ''>( site_type || '' );
-	const [ notice, setNotice ] = useState<NoticeState | null>( null );
-	const [ isSaving, setIsSaving ] = useState<boolean>( false );
+	const [ siteType, setSiteType ] = useState< SiteType | '' >(
+		site_type || ''
+	);
+	const [ notice, setNotice ] = useState< NoticeState | null >( null );
+	const [ isSaving, setIsSaving ] = useState< boolean >( false );
 
 	useEffect( () => {
 		apiFetch.use( apiFetch.createNonceMiddleware( nonce ) );
-		apiFetch<{ oneaccess_site_type?: SiteType }>( { path: '/wp/v2/settings' } )
+		apiFetch< { oneaccess_site_type?: SiteType } >( {
+			path: '/wp/v2/settings',
+		} )
 			.then( ( settings ) => {
 				if ( settings?.oneaccess_site_type ) {
 					setSiteType( settings.oneaccess_site_type );
@@ -74,13 +90,15 @@ const OnboardingScreen = () => {
 
 		try {
 			// need to use custom endpoint as after site type change we need to update user role & create brand admin or network admin accordingly.
-			await apiFetch<{ site_type?: SiteType }>( {
+			await apiFetch< { site_type?: SiteType } >( {
 				path: '/oneaccess/v1/site-type',
 				method: 'POST',
 				data: { site_type: value },
 			} ).then( ( settings ) => {
 				if ( ! settings?.site_type ) {
-					throw new Error( __( 'No site type in response', 'oneaccess' ) );
+					throw new Error(
+						__( 'No site type in response', 'oneaccess' )
+					);
 				}
 
 				setSiteType( settings.site_type );
@@ -105,7 +123,7 @@ const OnboardingScreen = () => {
 			{ !! notice?.message && (
 				<Notice
 					status={ notice?.type ?? 'success' }
-					isDismissible={ true }
+					isDismissible
 					onRemove={ () => setNotice( null ) }
 				>
 					{ notice?.message }

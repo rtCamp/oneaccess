@@ -5,6 +5,8 @@
  * @package OneAccess
  */
 
+declare(strict_types = 1);
+
 namespace OneAccess\Modules\User;
 
 use OneAccess\Contracts\Interfaces\Registrable;
@@ -17,7 +19,6 @@ use OneAccess\Modules\Settings\Settings;
  * Class Admin
  */
 class Admin implements Registrable {
-
 	/**
 	 * The menu slug for the admin menu.
 	 *
@@ -54,8 +55,6 @@ class Admin implements Registrable {
 
 	/**
 	 * Add a settings page.
-	 *
-	 * @return void
 	 */
 	public function add_admin_menu(): void {
 		add_menu_page(
@@ -107,8 +106,6 @@ class Admin implements Registrable {
 
 	/**
 	 * Render admin page
-	 *
-	 * @return void
 	 */
 	public function render_user_manager(): void {
 		?>

@@ -18,6 +18,8 @@
  * @package OneAccess
  */
 
+declare(strict_types = 1);
+
 namespace OneAccess;
 
 // Exit if accessed directly.
@@ -68,8 +70,6 @@ if ( class_exists( 'OneAccess\Main' ) ) {
 
 /**
  * Load OneAccess plugin functionality.
- *
- * @return void
  */
 function load_plugin(): void {
 	\OneAccess\Main::instance();

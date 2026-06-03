@@ -47,7 +47,7 @@ const SettingsPage = () => {
 	apiFetch.use( apiFetch.createNonceMiddleware( NONCE ) );
 
 	useEffect( () => {
-		apiFetch<{ oneaccess_shared_sites?: BrandSite[] }>( {
+		apiFetch< { oneaccess_shared_sites?: BrandSite[] } >( {
 			path: '/wp/v2/settings',
 		} )
 			.then( ( settings ) => {
@@ -69,27 +69,37 @@ const SettingsPage = () => {
 		}
 	}, [ sites, siteType ] );
 
-	const handleFormSubmit = async () : Promise<void > => {
-		const updated : BrandSite[] = editingIndex !== null
-			? sites.map( ( item, i ) => ( i === editingIndex ? formData : item ) )
-			: [ ...sites, formData ];
+	const handleFormSubmit = async (): Promise< void > => {
+		const updated: BrandSite[] =
+			editingIndex !== null
+				? sites.map( ( item, i ) =>
+						i === editingIndex ? formData : item
+				  )
+				: [ ...sites, formData ];
 		try {
-			apiFetch<{ oneaccess_shared_sites?: BrandSite[] }>( {
+			apiFetch< { oneaccess_shared_sites?: BrandSite[] } >( {
 				path: '/wp/v2/settings',
 				method: 'POST',
 				data: { oneaccess_shared_sites: updated },
-			} ).then( ( settings ) => {
-				if ( ! settings?.oneaccess_shared_sites ) {
-					throw new Error( 'No shared sites in response' );
-				}
-				const previousLength = sites.length;
-				setSites( settings.oneaccess_shared_sites );
-				if ( ( settings.oneaccess_shared_sites.length === 1 && previousLength === 0 ) || ( previousLength === 1 && settings.oneaccess_shared_sites.length === 0 ) ) {
-					window.location.reload();
-				}
-			} ).catch( () => {
-				throw new Error( 'Failed to update shared sites' );
-			} );
+			} )
+				.then( ( settings ) => {
+					if ( ! settings?.oneaccess_shared_sites ) {
+						throw new Error( 'No shared sites in response' );
+					}
+					const previousLength = sites.length;
+					setSites( settings.oneaccess_shared_sites );
+					if (
+						( settings.oneaccess_shared_sites.length === 1 &&
+							previousLength === 0 ) ||
+						( previousLength === 1 &&
+							settings.oneaccess_shared_sites.length === 0 )
+					) {
+						window.location.reload();
+					}
+				} )
+				.catch( () => {
+					throw new Error( 'Failed to update shared sites' );
+				} );
 
 			setNotice( {
 				type: 'success',
@@ -98,7 +108,10 @@ const SettingsPage = () => {
 		} catch {
 			setNotice( {
 				type: 'error',
-				message: __( 'Error saving Brand site. Please try again later.', 'oneaccess' ),
+				message: __(
+					'Error saving Brand site. Please try again later.',
+					'oneaccess'
+				),
 			} );
 		} finally {
 			setFormData( defaultBrandSite );
@@ -107,32 +120,44 @@ const SettingsPage = () => {
 		}
 	};
 
-	const handleDelete = async ( index : number|null ) : Promise<void> => {
-		const updated : BrandSite[] = sites.filter( ( _, i ) => i !== index );
+	const handleDelete = async ( index: number | null ): Promise< void > => {
+		const updated: BrandSite[] = sites.filter( ( _, i ) => i !== index );
 
 		try {
-			await apiFetch<{ oneaccess_shared_sites?: BrandSite[] }>( {
+			await apiFetch< { oneaccess_shared_sites?: BrandSite[] } >( {
 				path: '/wp/v2/settings',
 				method: 'POST',
 				data: { oneaccess_shared_sites: updated },
-			} ).then( ( settings ) => {
-				if ( ! settings?.oneaccess_shared_sites ) {
-					throw new Error( 'No shared sites in response' );
-				}
-				const previousLength = sites.length;
-				setSites( settings.oneaccess_shared_sites );
-				if ( ( settings.oneaccess_shared_sites.length === 1 && previousLength === 0 ) || ( previousLength === 1 && settings.oneaccess_shared_sites.length === 0 ) ) {
-					window.location.reload();
-				} else {
-					document.body.classList.remove( 'oneaccess-missing-brand-sites' );
-				}
-			} ).catch( () => {
-				throw new Error( 'Failed to update shared sites' );
-			} );
+			} )
+				.then( ( settings ) => {
+					if ( ! settings?.oneaccess_shared_sites ) {
+						throw new Error( 'No shared sites in response' );
+					}
+					const previousLength = sites.length;
+					setSites( settings.oneaccess_shared_sites );
+					if (
+						( settings.oneaccess_shared_sites.length === 1 &&
+							previousLength === 0 ) ||
+						( previousLength === 1 &&
+							settings.oneaccess_shared_sites.length === 0 )
+					) {
+						window.location.reload();
+					} else {
+						document.body.classList.remove(
+							'oneaccess-missing-brand-sites'
+						);
+					}
+				} )
+				.catch( () => {
+					throw new Error( 'Failed to update shared sites' );
+				} );
 		} catch {
 			setNotice( {
 				type: 'error',
-				message: __( 'Error deleting Brand site. Please try again later.', 'oneaccess' ),
+				message: __(
+					'Error deleting Brand site. Please try again later.',
+					'oneaccess'
+				),
 			} );
 		}
 	};
@@ -140,33 +165,39 @@ const SettingsPage = () => {
 	return (
 		<>
 			<>
-				<Notice
-					status="info"
-					isDismissible={ false }
-				>
-					{ __( 'Note: To use OneAccess plugin, your role must be Network Admin on Governing site and Brand Admin on Brand site.', 'oneaccess' ) }
+				<Notice status="info" isDismissible={ false }>
+					{ __(
+						'Note: To use OneAccess plugin, your role must be Network Admin on Governing site and Brand Admin on Brand site.',
+						'oneaccess'
+					) }
 				</Notice>
 			</>
 			<>
-				{ !! notice && notice?.message?.length > 0 &&
-				<Snackbar
-					explicitDismiss={ false }
-					onRemove={ () => setNotice( null ) }
-					className={ notice?.type === 'error' ? 'oneaccess-error-notice' : 'oneaccess-success-notice' }
-				>
-					{ notice?.message }
-				</Snackbar>
-				}
+				{ !! notice && notice?.message?.length > 0 && (
+					<Snackbar
+						explicitDismiss={ false }
+						onRemove={ () => setNotice( null ) }
+						className={
+							notice?.type === 'error'
+								? 'oneaccess-error-notice'
+								: 'oneaccess-success-notice'
+						}
+					>
+						{ notice?.message }
+					</Snackbar>
+				) }
 			</>
 
-			{
-				siteType === 'brand-site' && (
-					<SiteSettings />
-				)
-			}
+			{ siteType === 'brand-site' && <SiteSettings /> }
 
 			{ siteType === 'governing-site' && (
-				<SiteTable sites={ sites } onEdit={ setEditingIndex } onDelete={ handleDelete } setFormData={ setFormData } setShowModal={ setShowModal } />
+				<SiteTable
+					sites={ sites }
+					onEdit={ setEditingIndex }
+					onDelete={ handleDelete }
+					setFormData={ setFormData }
+					setShowModal={ setShowModal }
+				/>
 			) }
 
 			{ showModal && (
@@ -181,7 +212,11 @@ const SettingsPage = () => {
 					} }
 					editing={ editingIndex !== null }
 					sites={ sites }
-					originalData={ editingIndex !== null ? sites[ editingIndex ] : undefined }
+					originalData={
+						editingIndex !== null
+							? sites[ editingIndex ]
+							: undefined
+					}
 				/>
 			) }
 		</>

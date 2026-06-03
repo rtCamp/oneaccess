@@ -18,6 +18,9 @@ import { __ } from '@wordpress/i18n';
 /**
  * Internal dependencies
  */
+/**
+ * External dependencies
+ */
 import type { NoticeType } from '@/admin/settings/page';
 
 const API_NAMESPACE = window.OneAccessSettings.restUrl + '/oneaccess/v1';
@@ -29,7 +32,8 @@ const SiteSettings = () => {
 	const [ isLoading, setIsLoading ] = useState< boolean >( false );
 	const [ notice, setNotice ] = useState< NoticeType | null >( null );
 	const [ governingSite, setGoverningSite ] = useState< string >( '' );
-	const [ showDisconectionModal, setShowDisconectionModal ] = useState< boolean >( false );
+	const [ showDisconectionModal, setShowDisconectionModal ] =
+		useState< boolean >( false );
 
 	const fetchApiKey = useCallback( async () => {
 		setIsLoading( true );
@@ -50,7 +54,10 @@ const SiteSettings = () => {
 		} catch ( error ) {
 			setNotice( {
 				type: 'error',
-				message: __( 'Failed to fetch api key. Please try again later.', 'oneaccess' ),
+				message: __(
+					'Failed to fetch api key. Please try again later.',
+					'oneaccess'
+				),
 			} );
 		} finally {
 			setIsLoading( false );
@@ -75,18 +82,27 @@ const SiteSettings = () => {
 				setApiKey( data.secret_key );
 				setNotice( {
 					type: 'warning',
-					message: __( 'API key regenerated successfully. Please update your old key with this newly generated key to make sure plugin works properly.', 'oneaccess' ),
+					message: __(
+						'API key regenerated successfully. Please update your old key with this newly generated key to make sure plugin works properly.',
+						'oneaccess'
+					),
 				} );
 			} else {
 				setNotice( {
 					type: 'error',
-					message: __( 'Failed to regenerate api key. Please try again later.', 'oneaccess' ),
+					message: __(
+						'Failed to regenerate api key. Please try again later.',
+						'oneaccess'
+					),
 				} );
 			}
 		} catch ( error ) {
 			setNotice( {
 				type: 'error',
-				message: __( 'Error regenerating api key. Please try again later.', 'oneaccess' ),
+				message: __(
+					'Error regenerating api key. Please try again later.',
+					'oneaccess'
+				),
 			} );
 		}
 	}, [] );
@@ -103,7 +119,7 @@ const SiteSettings = () => {
 						'X-WP-Nonce': NONCE,
 						'X-OneAccess-Token': apiKey,
 					},
-				},
+				}
 			);
 			if ( ! response.ok ) {
 				throw new Error( 'Network response was not ok' );
@@ -113,9 +129,11 @@ const SiteSettings = () => {
 		} catch ( error ) {
 			setNotice( {
 				type: 'error',
-				message: __( 'Failed to fetch governing site. Please try again later.', 'oneaccess' ),
-			},
-			);
+				message: __(
+					'Failed to fetch governing site. Please try again later.',
+					'oneaccess'
+				),
+			} );
 		} finally {
 			setIsLoading( false );
 		}
@@ -123,29 +141,32 @@ const SiteSettings = () => {
 
 	const deleteGoverningSiteConnection = useCallback( async () => {
 		try {
-			const response = await fetch(
-				`${ API_NAMESPACE }/governing-site`,
-				{
-					method: 'DELETE',
-					headers: {
-						'Content-Type': 'application/json',
-						'X-WP-Nonce': NONCE,
-						'X-OneAccess-Token': apiKey,
-					},
+			const response = await fetch( `${ API_NAMESPACE }/governing-site`, {
+				method: 'DELETE',
+				headers: {
+					'Content-Type': 'application/json',
+					'X-WP-Nonce': NONCE,
+					'X-OneAccess-Token': apiKey,
 				},
-			);
+			} );
 			if ( ! response.ok ) {
 				throw new Error( 'Network response was not ok' );
 			}
 			setGoverningSite( '' );
 			setNotice( {
 				type: 'success',
-				message: __( 'Governing site disconnected successfully.', 'oneaccess' ),
+				message: __(
+					'Governing site disconnected successfully.',
+					'oneaccess'
+				),
 			} );
 		} catch ( error ) {
 			setNotice( {
 				type: 'error',
-				message: __( 'Failed to disconnect governing site. Please try again later.', 'oneaccess' ),
+				message: __(
+					'Failed to disconnect governing site. Please try again later.',
+					'oneaccess'
+				),
 			} );
 		} finally {
 			setShowDisconectionModal( false );
@@ -167,18 +188,18 @@ const SiteSettings = () => {
 
 	return (
 		<>
-
 			{ notice && (
 				<Notice
 					status={ notice.type }
-					isDismissible={ true }
+					isDismissible
 					onRemove={ () => setNotice( null ) }
 				>
 					{ notice.message }
 				</Notice>
 			) }
 
-			<Card className="brand-site-settings"
+			<Card
+				className="brand-site-settings"
 				style={ { marginTop: '30px' } }
 			>
 				<CardHeader>
@@ -188,17 +209,27 @@ const SiteSettings = () => {
 						<Button
 							variant="primary"
 							onClick={ () => {
-								navigator?.clipboard?.writeText( apiKey )
+								navigator?.clipboard
+									?.writeText( apiKey )
 									.then( () => {
 										setNotice( {
 											type: 'success',
-											message: __( 'API key copied to clipboard.', 'oneaccess' ),
+											message: __(
+												'API key copied to clipboard.',
+												'oneaccess'
+											),
 										} );
 									} )
 									.catch( ( error ) => {
 										setNotice( {
 											type: 'error',
-											message: __( 'Failed to copy api key. Please try again.', 'oneaccess' ) + ' ' + error,
+											message:
+												__(
+													'Failed to copy api key. Please try again.',
+													'oneaccess'
+												) +
+												' ' +
+												error,
 										} );
 									} );
 							} }
@@ -219,16 +250,19 @@ const SiteSettings = () => {
 					<div>
 						<TextareaControl
 							value={ apiKey }
-							disabled={ true }
-							help={ __( 'This key is used for secure communication with the Governing site.', 'oneaccess' ) }
+							disabled
+							help={ __(
+								'This key is used for secure communication with the Governing site.',
+								'oneaccess'
+							) }
 							__nextHasNoMarginBottom
 							onChange={ () => {} } // to avoid ts warning
 						/>
 					</div>
 				</CardBody>
-
 			</Card>
-			<Card className="governing-site-connection"
+			<Card
+				className="governing-site-connection"
 				style={ { marginTop: '30px' } }
 			>
 				<CardHeader>
@@ -237,7 +271,9 @@ const SiteSettings = () => {
 						variant="secondary"
 						isDestructive
 						onClick={ handleDisconnectGoverningSite }
-						disabled={ governingSite.trim().length === 0 || isLoading }
+						disabled={
+							governingSite.trim().length === 0 || isLoading
+						}
 					>
 						{ __( 'Disconnect Governing Site', 'oneaccess' ) }
 					</Button>
@@ -246,8 +282,11 @@ const SiteSettings = () => {
 					<TextControl
 						label={ __( 'Governing Site URL', 'oneaccess' ) }
 						value={ governingSite }
-						disabled={ true }
-						help={ __( 'This is the URL of the Governing site this Brand site is connected to.', 'oneaccess' ) }
+						disabled
+						help={ __(
+							'This is the URL of the Governing site this Brand site is connected to.',
+							'oneaccess'
+						) }
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 						onChange={ () => {} } // to avoid ts warning
@@ -259,10 +298,22 @@ const SiteSettings = () => {
 				<Modal
 					title={ __( 'Disconnect Governing Site', 'oneaccess' ) }
 					onRequestClose={ () => setShowDisconectionModal( false ) }
-					shouldCloseOnClickOutside={ true }
+					shouldCloseOnClickOutside
 				>
-					<p>{ __( 'Are you sure you want to disconnect from the governing site? This action cannot be undone.', 'oneaccess' ) }</p>
-					<div style={ { display: 'flex', justifyContent: 'flex-end', marginTop: '20px', gap: '16px' } }>
+					<p>
+						{ __(
+							'Are you sure you want to disconnect from the governing site? This action cannot be undone.',
+							'oneaccess'
+						) }
+					</p>
+					<div
+						style={ {
+							display: 'flex',
+							justifyContent: 'flex-end',
+							marginTop: '20px',
+							gap: '16px',
+						} }
+					>
 						<Button
 							variant="secondary"
 							onClick={ () => setShowDisconectionModal( false ) }

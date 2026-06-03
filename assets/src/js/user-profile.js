@@ -21,19 +21,25 @@ const fieldsToDisable = [
 
 const UserProfileRequest = OneAccessProfile || {};
 
-document.addEventListener( 'DOMContentLoaded', () => {
-	if ( UserProfileRequest?.request?.status !== 'pending' ) {
-		return;
-	}
-	fieldsToDisable.forEach( function( field ) {
-		const input = document.querySelector( '#' + field );
-		if ( input ) {
-			input.disabled = true;
+document.addEventListener(
+	'DOMContentLoaded',
+	() => {
+		if ( UserProfileRequest?.request?.status !== 'pending' ) {
+			return;
 		}
-	} );
-	// JavaScript
-	const submitBtn = document.querySelector( 'input[type="submit"][name="submit"][id="submit"]' );
-	if ( submitBtn ) {
-		submitBtn.disabled = true;
-	}
-}, { once: true } );
+		fieldsToDisable.forEach( function ( field ) {
+			const input = document.querySelector( '#' + field );
+			if ( input ) {
+				input.disabled = true;
+			}
+		} );
+		// JavaScript
+		const submitBtn = document.querySelector(
+			'input[type="submit"][name="submit"][id="submit"]'
+		);
+		if ( submitBtn ) {
+			submitBtn.disabled = true;
+		}
+	},
+	{ once: true }
+);

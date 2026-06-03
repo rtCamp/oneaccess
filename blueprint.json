@@ -1,0 +1,33 @@
+{
+	"$schema": "https://playground.wordpress.net/blueprint-schema.json",
+	"meta": {
+		"title": "OneAccess Demo",
+		"description": "Cross-site, brand-aware user access management across a multi-brand WordPress network.",
+		"author": "rtCamp",
+		"categories": [ "plugin", "users", "multisite", "enterprise" ]
+	},
+	"landingPage": "/wp-admin/plugins.php",
+	"preferredVersions": {
+		"php": "8.4",
+		"wp": "latest"
+	},
+	"features": {
+		"networking": true
+	},
+	"steps": [
+		{
+			"step": "login",
+			"username": "admin"
+		},
+		{
+			"step": "installPlugin",
+			"pluginData": {
+				"resource": "url",
+				"url": "https://github.com/rtCamp/OneAccess/releases/latest/download/oneaccess.zip"
+			},
+			"options": {
+				"activate": true
+			}
+		}
+	]
+}

@@ -5,6 +5,8 @@
  * @package OneAccess
  */
 
+declare(strict_types = 1);
+
 namespace OneAccess\Modules\Core;
 
 use OneAccess\Contracts\Interfaces\Registrable;
@@ -59,6 +61,8 @@ class Assets implements Registrable {
 
 	/**
 	 * Prepare localized data.
+	 *
+	 * @return array<string, string>
 	 */
 	public static function get_localized_data(): array {
 		if ( empty( self::$localized_data ) ) {
