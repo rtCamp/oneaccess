@@ -16,7 +16,7 @@
 			"composer/installers": true
 		},
 		"platform": {
-			"php": "8.2"
+			"php": "8.0"
 		},
 		"sort-packages": true,
 		"preferred-install": "dist",
@@ -57,7 +57,7 @@
 		}
 	],
 	"require": {
-		"php": "^8.2",
+		"php": "^8",
 		"woocommerce/action-scheduler": "^3.9.3"
 	},
 	"require-dev": {

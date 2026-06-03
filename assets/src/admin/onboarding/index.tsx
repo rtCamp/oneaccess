@@ -1,7 +1,7 @@
 /**
  * External dependencies
  */
-import { createRoot } from 'react-dom/client';
+import { createRoot } from '@wordpress/element';
 /**
  * Internal dependencies
  */
