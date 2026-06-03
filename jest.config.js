@@ -86,5 +86,4 @@ module.exports = {
 
 	// Timeout for slow tests (useful for integration tests)
 	testTimeout: 10000,
-
 };
