@@ -24,6 +24,12 @@ const config = {
 				singleQuote: true,
 			},
 		},
+		{
+			files: [ '*.css', '*.scss' ],
+			options: {
+				printWidth: 120,
+			},
+		},
 	],
 };
 
