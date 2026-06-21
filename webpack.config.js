@@ -62,8 +62,8 @@ const scripts = {
 			process.cwd(),
 			'assets',
 			'src',
-			'js',
-			'user-profile.js'
+			'user-profile',
+			'index.js'
 		),
 		admin: path.resolve( process.cwd(), 'assets', 'src', 'js', 'admin.js' ),
 		settings: path.resolve(
