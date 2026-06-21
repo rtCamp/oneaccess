@@ -77,7 +77,7 @@ const SettingsPage = () => {
 				  )
 				: [ ...sites, formData ];
 		try {
-			apiFetch< { oneaccess_shared_sites?: BrandSite[] } >( {
+			await apiFetch< { oneaccess_shared_sites?: BrandSite[] } >( {
 				path: '/wp/v2/settings',
 				method: 'POST',
 				data: { oneaccess_shared_sites: updated },
