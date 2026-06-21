@@ -36,9 +36,9 @@ import {
 	getStrengthColor,
 } from '../js/utils';
 
-const NONCE = OneAccess.nonce;
-const API_NAMESPACE = OneAccess.restUrl + '/oneaccess/v1';
-const AVAILABLE_ROLES = OneAccess.availableRoles || [];
+const NONCE = window.OneAccess.nonce;
+const API_NAMESPACE = window.OneAccess.restUrl + '/oneaccess/v1';
+const AVAILABLE_ROLES = window.OneAccess.availableRoles || [];
 const PER_PAGE = 20;
 
 const SharedUsers = ( { availableSites } ) => {
@@ -186,7 +186,7 @@ const SharedUsers = ( { availableSites } ) => {
 
 			setUsers( transformedUsers );
 			setTotalPages( data.pagination.total_pages );
-		} catch ( error ) {
+		} catch {
 			setNotice( {
 				type: 'error',
 				message: __(
@@ -297,7 +297,7 @@ const SharedUsers = ( { availableSites } ) => {
 
 			// Refresh users list
 			await fetchUsers();
-		} catch ( error ) {
+		} catch {
 			setNotice( {
 				type: 'error',
 				message: __( 'Failed to delete user.', 'oneaccess' ),
@@ -346,7 +346,7 @@ const SharedUsers = ( { availableSites } ) => {
 
 			// Refresh users list
 			await fetchUsers();
-		} catch ( error ) {
+		} catch {
 			setNotice( {
 				type: 'error',
 				message: __(
@@ -406,7 +406,7 @@ const SharedUsers = ( { availableSites } ) => {
 			// Refresh users list
 			await fetchUsers();
 			setPassword( '' );
-		} catch ( error ) {
+		} catch {
 			setNotice( {
 				type: 'error',
 				message: __(
@@ -480,7 +480,7 @@ const SharedUsers = ( { availableSites } ) => {
 				// Refresh users list
 				await fetchUsers();
 			}
-		} catch ( error ) {
+		} catch {
 			setNotice( {
 				type: 'error',
 				message: __(
@@ -538,7 +538,7 @@ const SharedUsers = ( { availableSites } ) => {
 					),
 				} );
 			}
-		} catch ( error ) {
+		} catch {
 			setNotice( {
 				type: 'error',
 				message: __(
@@ -593,7 +593,7 @@ const SharedUsers = ( { availableSites } ) => {
 				message: __( 'Password generated successfully.', 'oneaccess' ),
 			} );
 			setPassword( data.password );
-		} catch ( error ) {
+		} catch {
 			setPasswordNotice( {
 				type: 'error',
 				message: __(

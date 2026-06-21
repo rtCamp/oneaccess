@@ -19,9 +19,9 @@ import {
 import { decodeEntities } from '@wordpress/html-entities';
 import { arrowLeft } from '@wordpress/icons';
 
-const NONCE = OneAccess.nonce;
-const API_NAMESPACE = OneAccess.restUrl + '/oneaccess/v1';
-const API_KEY = OneAccess.api_key;
+const NONCE = window.OneAccess.nonce;
+const API_NAMESPACE = window.OneAccess.restUrl + '/oneaccess/v1';
+const API_KEY = window.OneAccess.api_key;
 const PER_PAGE = 20;
 
 const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
@@ -124,7 +124,7 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 				const pagination = data.pagination || {};
 				setHasMore( pagination.has_more || false );
 				setTotalPages( pagination.total_pages || 1 );
-			} catch ( error ) {
+			} catch {
 				setNotice( {
 					type: 'error',
 					message: __(
@@ -180,7 +180,7 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 				),
 			} );
 			fetchProfileRequests();
-		} catch ( error ) {
+		} catch {
 			setNotice( {
 				type: 'error',
 				message: __(
@@ -238,7 +238,7 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 				),
 			} );
 			fetchProfileRequests();
-		} catch ( error ) {
+		} catch {
 			setNotice( {
 				type: 'error',
 				message: __( 'Failed to reject profile request.', 'oneaccess' ),

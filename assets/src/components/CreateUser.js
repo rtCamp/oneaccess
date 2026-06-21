@@ -32,10 +32,10 @@ import {
 	getStrengthColor,
 } from '../js/utils';
 
-const NONCE = OneAccess.nonce;
-const API_NAMESPACE = OneAccess.restUrl + '/oneaccess/v1';
-const API_KEY = OneAccess.api_key;
-const AVAILABLE_ROLES = OneAccess.availableRoles || [];
+const NONCE = window.OneAccess.nonce;
+const API_NAMESPACE = window.OneAccess.restUrl + '/oneaccess/v1';
+const API_KEY = window.OneAccess.api_key;
+const AVAILABLE_ROLES = window.OneAccess.availableRoles || [];
 
 const CreateUser = ( { availableSites } ) => {
 	const [ userFormData, setUserFormData ] = useState( {
@@ -97,7 +97,7 @@ const CreateUser = ( { availableSites } ) => {
 				message: __( 'Password generated successfully.', 'oneaccess' ),
 			} );
 			return data.password;
-		} catch ( error ) {
+		} catch {
 			setNotice( {
 				type: 'error',
 				message: __(
@@ -171,8 +171,8 @@ const CreateUser = ( { availableSites } ) => {
 			}
 
 			const results = data?.data?.response_data || [];
-			const newNotices = results.map( ( result ) => ( {
-				id: Math.random().toString(),
+			const newNotices = results.map( ( result, index ) => ( {
+				id: `notice-${ Date.now() }-${ index }`,
 				status: result.status === 'success' ? 'success' : 'error',
 				content: result.site
 					? `${ result.site }: ${ result.message }`
@@ -198,7 +198,7 @@ const CreateUser = ( { availableSites } ) => {
 					role: 'subscriber',
 				} );
 			}
-		} catch ( error ) {
+		} catch {
 			setNotice( {
 				type: 'error',
 				message: __(

@@ -53,7 +53,7 @@ const TabPanel = () => {
 			}
 			const data = await response.json();
 			setProfileRequestsCount( data?.total_pending_count || 0 );
-		} catch ( error ) {
+		} catch {
 			setNotice( {
 				type: 'error',
 				message: __(

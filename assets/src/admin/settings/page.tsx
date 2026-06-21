@@ -67,7 +67,7 @@ const SettingsPage = () => {
 		if ( siteType === 'governing-site' && sites.length > 0 ) {
 			document.body.classList.remove( 'oneaccess-missing-brand-sites' );
 		}
-	}, [ sites, siteType ] );
+	}, [ sites ] );
 
 	const handleFormSubmit = async (): Promise< void > => {
 		const updated: BrandSite[] =

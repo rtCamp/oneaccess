@@ -19,7 +19,7 @@ const fieldsToDisable = [
 	'url',
 ];
 
-const UserProfileRequest = OneAccessProfile || {};
+const UserProfileRequest = window.OneAccessProfile || {};
 
 document.addEventListener(
 	'DOMContentLoaded',
