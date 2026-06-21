@@ -1,11 +1,12 @@
+/**
+ * External dependencies
+ */
 import { createRoot } from 'react-dom/client';
-import OnboardingScreen, { type SiteType } from './page';
-
-interface OneAccessOnboarding {
-	nonce: string;
-	site_type: SiteType | '';
-	setup_url: string;
-}
+/**
+ * Internal dependencies
+ */
+import OnboardingScreen from './page';
+import type { OneAccessOnboarding } from '@/types/global';
 
 declare global {
 	interface Window {

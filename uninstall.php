@@ -1,23 +1,24 @@
 <?php
 /**
- * This will be executed when the plugin is uninstalled.
+ * This will be executed when the plugin is uninstalled via the WordPress admin.
  *
  * @package OneAccess
  */
 
-declare( strict_types=1 );
+declare( strict_types = 1 );
 
 namespace OneAccess;
 
-// If uninstall not called from WordPress, exit.
-if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
-	exit;
-}
+// Only uninstall if called by WordPress.
+defined( 'WP_UNINSTALL_PLUGIN' ) || exit;
+
+// We use local constants so this plugin can be uninstalled even if the autoloader is corrupted or missing.
+const PLUGIN_PREFIX = 'oneaccess_';
 
 /**
- * Multisite loop for uninstalling from all sites.
+ * Uninstalls the plugin. If multisite, uninstalls from all sites.
  */
-function multisite_uninstall(): void {
+function run_uninstaller(): void {
 	if ( ! is_multisite() ) {
 		uninstall();
 		return;
@@ -33,7 +34,7 @@ function multisite_uninstall(): void {
 	) ?: [];
 
 	foreach ( $site_ids as $site_id ) {
-		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.switch_to_blog_switch_to_blog
+		// phpcs:ignore WordPressVIPMinimum.Functions.RestrictedFunctions.switch_to_blog_switch_to_blog -- The state doesn't matter during uninstall.
 		if ( ! switch_to_blog( (int) $site_id ) ) {
 			continue;
 		}
@@ -56,7 +57,7 @@ function uninstall(): void {
  */
 function delete_network_plugin_data(): void {
 	$options = [
-		'oneaccess_multisite_governing_site',
+		PLUGIN_PREFIX . 'multisite_governing_site',
 	];
 
 	foreach ( $options as $option ) {
@@ -71,8 +72,8 @@ function delete_plugin_data(): void {
 
 	// list of actions to be cleared on uninstall.
 	$actions_to_clear = [
-		'oneaccess_governing_site_configured',
-		'oneaccess_add_deduplicated_users',
+		PLUGIN_PREFIX . 'governing_site_configured',
+		PLUGIN_PREFIX . 'add_deduplicated_users',
 	];
 
 	// Clear scheduled actions.
@@ -84,15 +85,15 @@ function delete_plugin_data(): void {
 
 	// Options to clean up.
 	$options = [
-		'oneaccess_child_site_api_key',
-		'oneaccess_consumer_api_key',
-		'oneaccess_db_version',
-		'oneaccess_governing_site_url',
-		'oneaccess_new_users',
-		'oneaccess_parent_site_url',
-		'oneaccess_profile_update_requests',
-		'oneaccess_shared_sites',
-		'oneaccess_site_type',
+		PLUGIN_PREFIX . 'child_site_api_key',
+		PLUGIN_PREFIX . 'consumer_api_key',
+		PLUGIN_PREFIX . 'db_version',
+		PLUGIN_PREFIX . 'governing_site_url',
+		PLUGIN_PREFIX . 'new_users',
+		PLUGIN_PREFIX . 'parent_site_url',
+		PLUGIN_PREFIX . 'profile_update_requests',
+		PLUGIN_PREFIX . 'shared_sites',
+		PLUGIN_PREFIX . 'site_type',
 	];
 
 	foreach ( $options as $option ) {
@@ -101,8 +102,8 @@ function delete_plugin_data(): void {
 
 	// Drop custom tables created by the OneAccess.
 	$tables_to_drop = [
-		'oneaccess_deduplicated_users',
-		'oneaccess_profile_requests',
+		PLUGIN_PREFIX . 'deduplicated_users',
+		PLUGIN_PREFIX . 'profile_requests',
 	];
 
 	global $wpdb;
@@ -117,13 +118,13 @@ function delete_plugin_data(): void {
  */
 function remove_user_roles_caps(): void {
 	// remove custom roles and capabilities from users.
-	$roles = [ 'oneaccess_brand_admin', 'oneaccess_network_admin' ];
+	$roles = [ PLUGIN_PREFIX . 'brand_admin', PLUGIN_PREFIX . 'network_admin' ];
 
 	$capabilities = [
-		'oneaccess_manage_requests',
-		'oneaccess_manage_settings',
-		'oneaccess_manage_sites',
-		'oneaccess_manage_users',
+		PLUGIN_PREFIX . 'manage_requests',
+		PLUGIN_PREFIX . 'manage_settings',
+		PLUGIN_PREFIX . 'manage_sites',
+		PLUGIN_PREFIX . 'manage_users',
 	];
 
 	// get all users with custom roles & remove the role and capabilities.
@@ -151,4 +152,4 @@ function remove_user_roles_caps(): void {
 }
 
 // Run the uninstaller.
-multisite_uninstall();
+run_uninstaller();

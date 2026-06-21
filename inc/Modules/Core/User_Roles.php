@@ -1,4 +1,7 @@
 <?php
+
+declare(strict_types = 1);
+
 /**
  * User Roles module.
  *
@@ -14,7 +17,6 @@ use OneAccess\Modules\Settings\Settings;
  * Class User_Roles
  */
 class User_Roles implements Registrable {
-
 	/**
 	 * Prefix for custom roles.
 	 *
@@ -186,8 +188,6 @@ class User_Roles implements Registrable {
 
 	/**
 	 * Update user role on plugin activation.
-	 *
-	 * @return void
 	 */
 	public static function update_user_role_on_activation(): void {
 		$current_user = wp_get_current_user();

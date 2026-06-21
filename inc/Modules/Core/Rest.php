@@ -15,7 +15,6 @@ use OneAccess\Contracts\Interfaces\Registrable;
  * Class REST
  */
 final class Rest implements Registrable {
-
 	/**
 	 * {@inheritDoc}
 	 */

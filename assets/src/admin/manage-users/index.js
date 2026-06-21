@@ -1,7 +1,12 @@
 /**
  * WordPress dependencies
  */
-import { createRoot, useState, useEffect, useCallback } from '@wordpress/element';
+import {
+	createRoot,
+	useState,
+	useEffect,
+	useCallback,
+} from '@wordpress/element';
 import { Icon, plus, pencil, people } from '@wordpress/icons';
 import { decodeEntities } from '@wordpress/html-entities';
 import { __ } from '@wordpress/i18n';
@@ -14,7 +19,7 @@ import CreateUser from '../../components/CreateUser';
 import SharedUsers from '../../components/SharedUsers';
 import ProfileRequests from '../../components/ProfileRequests';
 
-const NONCE = window.OneAccess.restNonce;
+const NONCE = window.OneAccess.nonce;
 const API_NAMESPACE = window.OneAccess.restUrl + '/oneaccess/v1';
 const availableSites = window.OneAccess.availableSites || [];
 
@@ -31,7 +36,9 @@ const TabPanel = () => {
 		setIsLoading( true );
 		try {
 			const response = await fetch(
-				`${ API_NAMESPACE }/get-profile-requests?${ new Date().getTime().toString() }`,
+				`${ API_NAMESPACE }/get-profile-requests?${ new Date()
+					.getTime()
+					.toString() }`,
 				{
 					method: 'GET',
 					headers: {
@@ -39,7 +46,7 @@ const TabPanel = () => {
 						'X-WP-Nonce': NONCE,
 						'Cache-Control': 'no-cache',
 					},
-				},
+				}
 			);
 			if ( ! response.ok ) {
 				throw new Error( 'Failed to fetch profile requests count' );
@@ -49,7 +56,10 @@ const TabPanel = () => {
 		} catch ( error ) {
 			setNotice( {
 				type: 'error',
-				message: __( 'Failed to fetch profile requests count.', 'oneaccess' ),
+				message: __(
+					'Failed to fetch profile requests count.',
+					'oneaccess'
+				),
 			} );
 		} finally {
 			setIsLoading( false );
@@ -65,7 +75,10 @@ const TabPanel = () => {
 		const syncTabFromUrl = () => {
 			const params = new URLSearchParams( window.location.search );
 			const tabFromUrl = params.get( 'tab' );
-			if ( tabFromUrl && tabs.some( ( tab ) => tab.name === tabFromUrl ) ) {
+			if (
+				tabFromUrl &&
+				tabs.some( ( tab ) => tab.name === tabFromUrl )
+			) {
 				setActiveTab( tabFromUrl );
 			} else {
 				setActiveTab( 'users' );
@@ -87,7 +100,11 @@ const TabPanel = () => {
 		setActiveTab( tabName );
 		const params = new URLSearchParams( window.location.search );
 		params.set( 'tab', tabName );
-		window.history.pushState( {}, '', `${ window.location.pathname }?${ params.toString() }` );
+		window.history.pushState(
+			{},
+			'',
+			`${ window.location.pathname }?${ params.toString() }`
+		);
 	};
 
 	const tabs = [
@@ -95,32 +112,29 @@ const TabPanel = () => {
 			name: 'users',
 			title: 'Users',
 			icon: people,
-			content: (
-				<SharedUsers availableSites={ availableSites } />
-			),
+			content: <SharedUsers availableSites={ availableSites } />,
 		},
 		{
 			name: 'create-user',
 			title: 'Create User',
 			icon: plus,
-			content: (
-				<CreateUser availableSites={ availableSites } />
-			),
+			content: <CreateUser availableSites={ availableSites } />,
 		},
 		{
 			name: 'profile-requests',
 			title: 'Profile Requests',
 			icon: pencil,
 			content: (
-				<ProfileRequests setProfileRequestsCount={ setProfileRequestsCount } availableSites={ availableSites } />
+				<ProfileRequests
+					setProfileRequestsCount={ setProfileRequestsCount }
+					availableSites={ availableSites }
+				/>
 			),
 		},
 	];
 
 	if ( isLoading ) {
-		return (
-			<Spinner />
-		);
+		return <Spinner />;
 	}
 
 	return (
@@ -133,28 +147,35 @@ const TabPanel = () => {
 							<button
 								key={ tab.name }
 								onClick={ () => handleTabChange( tab.name ) }
-								className={ `tab-nav__button ${ activeTab === tab.name ? 'tab-nav__button--active' : '' }` }
-								aria-current={ activeTab === tab.name ? 'page' : undefined }
+								className={ `tab-nav__button ${
+									activeTab === tab.name
+										? 'tab-nav__button--active'
+										: ''
+								}` }
+								aria-current={
+									activeTab === tab.name ? 'page' : undefined
+								}
 							>
 								<Icon icon={ tab.icon } size={ 24 } />
 								<span>{ decodeEntities( tab.title ) }</span>
-								{ tab.name === 'profile-requests' && profileRequestsCount > 0 && (
-									<span
-										className="tab-nav__badge"
-										aria-label={ `${ profileRequestsCount } new profile requests` }
-										style={ {
-											marginLeft: '0.25rem',
-											backgroundColor: '#d63638',
-											color: '#fff',
-											borderRadius: '2px',
-											padding: '0.25rem 0.5rem',
-											height: '1rem',
-											width: 'auto',
-										} }
-									>
-										{ profileRequestsCount }
-									</span>
-								) }
+								{ tab.name === 'profile-requests' &&
+									profileRequestsCount > 0 && (
+										<span
+											className="tab-nav__badge"
+											aria-label={ `${ profileRequestsCount } new profile requests` }
+											style={ {
+												marginLeft: '0.25rem',
+												backgroundColor: '#d63638',
+												color: '#fff',
+												borderRadius: '2px',
+												padding: '0.25rem 0.5rem',
+												height: '1rem',
+												width: 'auto',
+											} }
+										>
+											{ profileRequestsCount }
+										</span>
+									) }
 							</button>
 						) ) }
 					</nav>
@@ -169,7 +190,11 @@ const TabPanel = () => {
 				<Snackbar
 					isDismissible
 					status={ notice.type }
-					className={ notice.type === 'error' ? 'oneaccess-error-notice' : 'oneaccess-success-notice' }
+					className={
+						notice.type === 'error'
+							? 'oneaccess-error-notice'
+							: 'oneaccess-success-notice'
+					}
 					onRemove={ () => setNotice( { type: '', message: '' } ) }
 				>
 					{ notice.message }

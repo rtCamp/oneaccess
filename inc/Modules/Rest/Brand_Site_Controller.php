@@ -5,6 +5,8 @@
  * @package OneAccess
  */
 
+declare(strict_types = 1);
+
 namespace OneAccess\Modules\Rest;
 
 use OneAccess\Modules\Settings\Settings;
@@ -13,7 +15,6 @@ use OneAccess\Modules\Settings\Settings;
  * Class Brand_Site_Controller
  */
 class Brand_Site_Controller extends Abstract_REST_Controller {
-
 	private const TIME_ZONE = 'timezone_string';
 
 	/**
@@ -104,8 +105,6 @@ class Brand_Site_Controller extends Abstract_REST_Controller {
 	 * Reject user profile request.
 	 *
 	 * @param \WP_REST_Request $request The REST request object.
-	 *
-	 * @return \WP_REST_Response
 	 */
 	public function reject_profile_request( \WP_REST_Request $request ): \WP_REST_Response {
 		$site_name         = sanitize_text_field( $request->get_param( 'site_name' ) );
@@ -168,8 +167,6 @@ class Brand_Site_Controller extends Abstract_REST_Controller {
 	 * Approve user profile request.
 	 *
 	 * @param \WP_REST_Request $request The REST request object.
-	 *
-	 * @return \WP_REST_Response
 	 */
 	public function approve_profile_request( \WP_REST_Request $request ): \WP_REST_Response {
 		$site_name  = sanitize_text_field( $request->get_param( 'site_name' ) );
@@ -228,8 +225,6 @@ class Brand_Site_Controller extends Abstract_REST_Controller {
 
 	/**
 	 * Get user profile request data across all brand sites.
-	 *
-	 * @return \WP_REST_Response
 	 */
 	public function all_profile_requests(): \WP_REST_Response {
 		// get all sites data.

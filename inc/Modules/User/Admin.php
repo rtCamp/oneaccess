@@ -5,6 +5,8 @@
  * @package OneAccess
  */
 
+declare(strict_types = 1);
+
 namespace OneAccess\Modules\User;
 
 use OneAccess\Contracts\Interfaces\Registrable;
@@ -17,7 +19,6 @@ use OneAccess\Modules\Settings\Settings;
  * Class Admin
  */
 class Admin implements Registrable {
-
 	/**
 	 * The menu slug for the admin menu.
 	 *
@@ -54,8 +55,6 @@ class Admin implements Registrable {
 
 	/**
 	 * Add a settings page.
-	 *
-	 * @return void
 	 */
 	public function add_admin_menu(): void {
 		add_menu_page(
@@ -107,8 +106,6 @@ class Admin implements Registrable {
 
 	/**
 	 * Render admin page
-	 *
-	 * @return void
 	 */
 	public function render_user_manager(): void {
 		?>
@@ -253,7 +250,7 @@ class Admin implements Registrable {
 	private function enqueue_admin_user_scripts(): void {
 		wp_enqueue_style( Assets::ADMIN_USER_STYLES_HANDLE );
 
-		$current_user                  = isset( $_GET['user_id'] ) ? filter_input( INPUT_GET, 'user_id', FILTER_SANITIZE_NUMBER_INT ) : get_current_user_id(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- this is to know on which user profile page we are.      
+		$current_user                  = isset( $_GET['user_id'] ) ? filter_input( INPUT_GET, 'user_id', FILTER_SANITIZE_NUMBER_INT ) : get_current_user_id(); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- this is to know on which user profile page we are.
 		$get_user_profile_request_data = DB::get_latest_profile_request_by_user_id( (int) $current_user );
 		$current_user_request          = is_array( $get_user_profile_request_data ) && ! empty( $get_user_profile_request_data ) ? $get_user_profile_request_data : null;
 

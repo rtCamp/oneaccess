@@ -19,7 +19,7 @@ import {
 import { decodeEntities } from '@wordpress/html-entities';
 import { arrowLeft } from '@wordpress/icons';
 
-const NONCE = OneAccess.restNonce;
+const NONCE = OneAccess.nonce;
 const API_NAMESPACE = OneAccess.restUrl + '/oneaccess/v1';
 const API_KEY = OneAccess.api_key;
 const PER_PAGE = 20;
@@ -33,7 +33,9 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 	const [ searchTerm, setSearchTerm ] = useState( '' );
 	const [ selectedSiteFilter, setSelectedSiteFilter ] = useState( '' );
 	const [ requestStatusFilter, setRequestStatusFilter ] = useState( '' );
-	const [ allSitesProfileRequests, setAllSitesProfileRequests ] = useState( [] );
+	const [ allSitesProfileRequests, setAllSitesProfileRequests ] = useState(
+		[]
+	);
 	const [ isViewModalOpen, setIsViewModalOpen ] = useState( false );
 	const [ isRejectModalOpen, setIsRejectModalOpen ] = useState( false );
 	const [ selectedRequest, setSelectedRequest ] = useState( null );
@@ -43,87 +45,104 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 	const [ totalPages, setTotalPages ] = useState( 1 );
 	const [ hasMore, setHasMore ] = useState( false );
 
-	const fetchProfileRequests = useCallback( async ( cursor = 0 ) => {
-		setIsLoading( true );
-		try {
-			// Build query params
-			const params = new URLSearchParams();
-			if ( selectedSiteFilter ) {
-				params.append( 'site', selectedSiteFilter );
-			}
-			if ( requestStatusFilter ) {
-				params.append( 'status', requestStatusFilter );
-			}
-			if ( searchTerm ) {
-				params.append( 'search_query', searchTerm );
-			}
-			if ( cursor > 0 ) {
-				params.append( 'cursor', cursor.toString() );
-			}
+	const fetchProfileRequests = useCallback(
+		async ( cursor = 0 ) => {
+			setIsLoading( true );
+			try {
+				// Build query params
+				const params = new URLSearchParams();
+				if ( selectedSiteFilter ) {
+					params.append( 'site', selectedSiteFilter );
+				}
+				if ( requestStatusFilter ) {
+					params.append( 'status', requestStatusFilter );
+				}
+				if ( searchTerm ) {
+					params.append( 'search_query', searchTerm );
+				}
+				if ( cursor > 0 ) {
+					params.append( 'cursor', cursor.toString() );
+				}
 
-			const response = await fetch(
-				`${ API_NAMESPACE }/get-profile-requests?${ params.toString() }&t=${ Date.now() }`,
-				{
-					method: 'GET',
-					headers: {
-						'Content-Type': 'application/json',
-						'X-WP-Nonce': NONCE,
-						'Cache-Control': 'no-cache',
-					},
-				},
-			);
+				const response = await fetch(
+					`${ API_NAMESPACE }/get-profile-requests?${ params.toString() }&t=${ Date.now() }`,
+					{
+						method: 'GET',
+						headers: {
+							'Content-Type': 'application/json',
+							'X-WP-Nonce': NONCE,
+							'Cache-Control': 'no-cache',
+						},
+					}
+				);
 
-			if ( ! response.ok ) {
+				if ( ! response.ok ) {
+					setNotice( {
+						type: 'error',
+						message: __(
+							'Failed to fetch profile requests.',
+							'oneaccess'
+						),
+					} );
+					throw new Error( 'Failed to fetch profile requests' );
+				}
+
+				const data = await response.json();
+
+				// Transform the data to match the component structure
+				const transformedRequests = ( data.profile_requests || [] ).map(
+					( request ) => {
+						const requestData = request.request_data || {};
+
+						return {
+							id: request.id,
+							user_id: request.user_id,
+							user_name: requestData.user_name || '',
+							user_email: requestData.user_email || '',
+							user_login: requestData.user_login || '',
+							requested_by: requestData.requested_by || '',
+							requested_at:
+								requestData.requested_at || request.created_at,
+							status: request.status,
+							site_name: request.site_name || '',
+							metadata: requestData.metadata || {},
+							data: requestData.data || {},
+							rejection_comment: request.comment || '',
+							created_at: request.created_at,
+							updated_at: request.updated_at,
+						};
+					}
+				);
+
+				setAllSitesProfileRequests( transformedRequests );
+
+				// Set total pending count for badge (always unfiltered total pending)
+				const pendingCount = data.total_pending_count || 0;
+				setProfileRequestsCount( pendingCount );
+
+				// Get pagination data from API
+				const pagination = data.pagination || {};
+				setHasMore( pagination.has_more || false );
+				setTotalPages( pagination.total_pages || 1 );
+			} catch ( error ) {
 				setNotice( {
 					type: 'error',
-					message: __( 'Failed to fetch profile requests.', 'oneaccess' ),
+					message: __(
+						'Failed to fetch profile requests.',
+						'oneaccess'
+					),
 				} );
-				throw new Error( 'Failed to fetch profile requests' );
+			} finally {
+				setIsLoading( false );
 			}
-
-			const data = await response.json();
-
-			// Transform the data to match the component structure
-			const transformedRequests = ( data.profile_requests || [] ).map( ( request ) => {
-				const requestData = request.request_data || {};
-
-				return {
-					id: request.id,
-					user_id: request.user_id,
-					user_name: requestData.user_name || '',
-					user_email: requestData.user_email || '',
-					user_login: requestData.user_login || '',
-					requested_by: requestData.requested_by || '',
-					requested_at: requestData.requested_at || request.created_at,
-					status: request.status,
-					site_name: request.site_name || '',
-					metadata: requestData.metadata || {},
-					data: requestData.data || {},
-					rejection_comment: request.comment || '',
-					created_at: request.created_at,
-					updated_at: request.updated_at,
-				};
-			} );
-
-			setAllSitesProfileRequests( transformedRequests );
-
-			// Set total pending count for badge (always unfiltered total pending)
-			const pendingCount = data.total_pending_count || 0;
-			setProfileRequestsCount( pendingCount );
-
-			// Get pagination data from API
-			const pagination = data.pagination || {};
-			setHasMore( pagination.has_more || false );
-			setTotalPages( pagination.total_pages || 1 );
-		} catch ( error ) {
-			setNotice( {
-				type: 'error',
-				message: __( 'Failed to fetch profile requests.', 'oneaccess' ),
-			} );
-		} finally {
-			setIsLoading( false );
-		}
-	}, [ setProfileRequestsCount, selectedSiteFilter, requestStatusFilter, searchTerm ] );
+		},
+		[
+			setProfileRequestsCount,
+			selectedSiteFilter,
+			requestStatusFilter,
+			searchTerm,
+		]
+	);
 
 	const handleAcceptRequest = async ( request ) => {
 		setIsProcessing( true );
@@ -146,7 +165,7 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 						metadata: request.metadata,
 						data: request.data,
 					} ),
-				},
+				}
 			);
 
 			if ( ! response.ok ) {
@@ -155,13 +174,19 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 
 			setNotice( {
 				type: 'success',
-				message: __( 'Profile request approved successfully.', 'oneaccess' ),
+				message: __(
+					'Profile request approved successfully.',
+					'oneaccess'
+				),
 			} );
 			fetchProfileRequests();
 		} catch ( error ) {
 			setNotice( {
 				type: 'error',
-				message: __( 'Failed to approve profile request.', 'oneaccess' ),
+				message: __(
+					'Failed to approve profile request.',
+					'oneaccess'
+				),
 			} );
 		} finally {
 			setIsProcessing( false );
@@ -173,7 +198,10 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 		if ( ! rejectionComment.trim() ) {
 			setNotice( {
 				type: 'error',
-				message: __( 'Please provide a rejection comment.', 'oneaccess' ),
+				message: __(
+					'Please provide a rejection comment.',
+					'oneaccess'
+				),
 			} );
 			return;
 		}
@@ -195,7 +223,7 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 						site_name: selectedRequest.site_name,
 						rejection_comment: rejectionComment,
 					} ),
-				},
+				}
 			);
 
 			if ( ! response.ok ) {
@@ -204,7 +232,10 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 
 			setNotice( {
 				type: 'success',
-				message: __( 'Profile request rejected successfully.', 'oneaccess' ),
+				message: __(
+					'Profile request rejected successfully.',
+					'oneaccess'
+				),
 			} );
 			fetchProfileRequests();
 		} catch ( error ) {
@@ -240,11 +271,21 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 		const changes = [];
 
 		// Add data changes (user fields like display_name, first_name, etc.)
-		if ( request.data && typeof request.data === 'object' && Object.keys( request.data ).length > 0 ) {
+		if (
+			request.data &&
+			typeof request.data === 'object' &&
+			Object.keys( request.data ).length > 0
+		) {
 			Object.entries( request.data ).forEach( ( [ key, value ] ) => {
-				if ( value && typeof value === 'object' && ( 'old' in value || 'new' in value ) ) {
+				if (
+					value &&
+					typeof value === 'object' &&
+					( 'old' in value || 'new' in value )
+				) {
 					changes.push( {
-						field: key.replace( /_/g, ' ' ).replace( /\b\w/g, ( l ) => l.toUpperCase() ),
+						field: key
+							.replace( /_/g, ' ' )
+							.replace( /\b\w/g, ( l ) => l.toUpperCase() ),
 						oldValue: value.old || __( 'Empty', 'oneaccess' ),
 						newValue: value.new || __( 'Empty', 'oneaccess' ),
 						type: 'data',
@@ -254,11 +295,21 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 		}
 
 		// Add metadata changes (custom fields like description, bio, etc.)
-		if ( request.metadata && typeof request.metadata === 'object' && Object.keys( request.metadata ).length > 0 ) {
+		if (
+			request.metadata &&
+			typeof request.metadata === 'object' &&
+			Object.keys( request.metadata ).length > 0
+		) {
 			Object.entries( request.metadata ).forEach( ( [ key, value ] ) => {
-				if ( value && typeof value === 'object' && ( 'old' in value || 'new' in value ) ) {
+				if (
+					value &&
+					typeof value === 'object' &&
+					( 'old' in value || 'new' in value )
+				) {
 					changes.push( {
-						field: key.replace( /_/g, ' ' ).replace( /\b\w/g, ( l ) => l.toUpperCase() ),
+						field: key
+							.replace( /_/g, ' ' )
+							.replace( /\b\w/g, ( l ) => l.toUpperCase() ),
 						oldValue: value.old || __( 'Empty', 'oneaccess' ),
 						newValue: value.new || __( 'Empty', 'oneaccess' ),
 						type: 'metadata',
@@ -268,7 +319,10 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 		}
 
 		return (
-			<table className="wp-list-table widefat fixed striped" style={ { marginTop: '16px' } }>
+			<table
+				className="wp-list-table widefat fixed striped"
+				style={ { marginTop: '16px' } }
+			>
 				<thead>
 					<tr>
 						<th>{ __( 'Field', 'oneaccess' ) }</th>
@@ -286,12 +340,28 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 					) : (
 						changes.map( ( change, index ) => (
 							<tr key={ index }>
-								<td><strong>{ change.field }</strong></td>
-								<td style={ { wordBreak: 'break-word', whiteSpace: 'pre-wrap' } }>
-									{ decodeEntities( String( change.oldValue ) ) }
+								<td>
+									<strong>{ change.field }</strong>
 								</td>
-								<td style={ { wordBreak: 'break-word', whiteSpace: 'pre-wrap' } }>
-									{ decodeEntities( String( change.newValue ) ) }
+								<td
+									style={ {
+										wordBreak: 'break-word',
+										whiteSpace: 'pre-wrap',
+									} }
+								>
+									{ decodeEntities(
+										String( change.oldValue )
+									) }
+								</td>
+								<td
+									style={ {
+										wordBreak: 'break-word',
+										whiteSpace: 'pre-wrap',
+									} }
+								>
+									{ decodeEntities(
+										String( change.newValue )
+									) }
 								</td>
 							</tr>
 						) )
@@ -304,10 +374,12 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 	// Get unique site names for filter dropdown (from API, ensure iterable)
 	const siteOptions = [
 		{ label: __( 'All Sites', 'oneaccess' ), value: '' },
-		...( Array.isArray( availableSites ) ? availableSites : [] ).map( ( site ) => ( {
-			label: decodeEntities( site?.name ),
-			value: site?.name,
-		} ) ),
+		...( Array.isArray( availableSites ) ? availableSites : [] ).map(
+			( site ) => ( {
+				label: decodeEntities( site?.name ),
+				value: site?.name,
+			} )
+		),
 	];
 
 	// Request status filter options
@@ -365,9 +437,16 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 					<h2>{ __( 'Profile Update Requests', 'oneaccess' ) }</h2>
 				</CardHeader>
 				<CardBody>
-					<Grid columns="4" gap="4" style={ { alignItems: 'flex-end' } }>
+					<Grid
+						columns="4"
+						gap="4"
+						style={ { alignItems: 'flex-end' } }
+					>
 						<TextControl
-							placeholder={ __( 'Search by name, email, or requested by…', 'oneaccess' ) }
+							placeholder={ __(
+								'Search by name, email, or requested by…',
+								'oneaccess'
+							) }
 							value={ searchTerm }
 							onChange={ setSearchTerm }
 							label={ __( 'Search Requests', 'oneaccess' ) }
@@ -391,7 +470,10 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 							__nextHasNoMarginBottom
 						/>
 					</Grid>
-					<table className="wp-list-table widefat fixed striped " style={ { marginTop: '16px' } }>
+					<table
+						className="wp-list-table widefat fixed striped "
+						style={ { marginTop: '16px' } }
+					>
 						<thead>
 							<tr>
 								<th>{ __( 'Site', 'oneaccess' ) }</th>
@@ -406,54 +488,98 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 						<tbody>
 							{ isLoading && (
 								<tr>
-									<td colSpan="7" style={ { textAlign: 'center', padding: '20px' } }>
+									<td
+										colSpan="7"
+										style={ {
+											textAlign: 'center',
+											padding: '20px',
+										} }
+									>
 										<Spinner />
 									</td>
 								</tr>
 							) }
 							{ ! isLoading && displayedRequests.length === 0 && (
 								<tr>
-									<td colSpan="7" style={ { textAlign: 'center' } }>
-										{ __( 'No profile requests found.', 'oneaccess' ) }
+									<td
+										colSpan="7"
+										style={ { textAlign: 'center' } }
+									>
+										{ __(
+											'No profile requests found.',
+											'oneaccess'
+										) }
 									</td>
 								</tr>
 							) }
-							{ ! isLoading && displayedRequests.map( ( request, index ) => (
-								<tr key={ `${ request.id }-${ request.site_name }-${ index }` }>
-									<td>{ decodeEntities( request.site_name ) }</td>
-									<td>{ decodeEntities( request.user_name ) }</td>
-									<td>{ request.user_email }</td>
-									<td>{ decodeEntities( request.requested_by ) }</td>
-									<td>{ request.requested_at }</td>
-									<td>
-										<span
-											className={ `status-badge status-${ request.status }` }
-											style={ {
-												display: 'inline-block',
-												padding: '2px 8px',
-												borderRadius: '4px',
-												fontSize: '12px',
-												fontWeight: '400',
-												...getStatusColor( request.status ),
-											} }
-										>
-											{ getStatusLabel( request.status ) }
-										</span>
-									</td>
-									<td>
-										<Button
-											variant="primary"
-											onClick={ () => openViewModal( request ) }
-											disabled={ isProcessing }
-										>
-											{ __( 'View Details', 'oneaccess' ) }
-										</Button>
-									</td>
-								</tr>
-							) ) }
+							{ ! isLoading &&
+								displayedRequests.map( ( request, index ) => (
+									<tr
+										key={ `${ request.id }-${ request.site_name }-${ index }` }
+									>
+										<td>
+											{ decodeEntities(
+												request.site_name
+											) }
+										</td>
+										<td>
+											{ decodeEntities(
+												request.user_name
+											) }
+										</td>
+										<td>{ request.user_email }</td>
+										<td>
+											{ decodeEntities(
+												request.requested_by
+											) }
+										</td>
+										<td>{ request.requested_at }</td>
+										<td>
+											<span
+												className={ `status-badge status-${ request.status }` }
+												style={ {
+													display: 'inline-block',
+													padding: '2px 8px',
+													borderRadius: '4px',
+													fontSize: '12px',
+													fontWeight: '400',
+													...getStatusColor(
+														request.status
+													),
+												} }
+											>
+												{ getStatusLabel(
+													request.status
+												) }
+											</span>
+										</td>
+										<td>
+											<Button
+												variant="primary"
+												onClick={ () =>
+													openViewModal( request )
+												}
+												disabled={ isProcessing }
+											>
+												{ __(
+													'View Details',
+													'oneaccess'
+												) }
+											</Button>
+										</td>
+									</tr>
+								) ) }
 						</tbody>
 					</table>
-					<div style={ { marginTop: '16px', display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '8px' } }>
+					<div
+						style={ {
+							marginTop: '16px',
+							display: 'flex',
+							justifyContent: 'center',
+							alignItems: 'center',
+							gap: '8px',
+						} }
+					>
 						<Button
 							variant="secondary"
 							onClick={ () => handlePageChange( page - 1 ) }
@@ -462,7 +588,8 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 							{ __( 'Previous', 'oneaccess' ) }
 						</Button>
 						<span>
-							{ __( 'Page', 'oneaccess' ) } { page } { __( 'of', 'oneaccess' ) } { totalPages }
+							{ __( 'Page', 'oneaccess' ) } { page }{ ' ' }
+							{ __( 'of', 'oneaccess' ) } { totalPages }
 						</span>
 						<Button
 							variant="secondary"
@@ -482,22 +609,58 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 					onRequestClose={ closeModals }
 					style={ { minWidth: '600px' } }
 					size="medium"
-					shouldCloseOnClickOutside={ true }
+					shouldCloseOnClickOutside
 				>
-					<div style={ { marginBottom: '20px', display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: '12px' } }>
-						<p style={ { margin: '0' } }><strong>{ __( 'User:', 'oneaccess' ) }</strong> { decodeEntities( selectedRequest.user_name ) }</p>
-						<p style={ { margin: '0' } }><strong>{ __( 'Email:', 'oneaccess' ) }</strong> { selectedRequest.user_email }</p>
-						<p style={ { margin: '0' } }><strong>{ __( 'Site:', 'oneaccess' ) }</strong> { decodeEntities( selectedRequest.site_name ) }</p>
-						<p style={ { margin: '0' } }><strong>{ __( 'Requested By:', 'oneaccess' ) }</strong> { decodeEntities( selectedRequest.requested_by ) }</p>
-						<p style={ { margin: '0' } }><strong>{ __( 'Requested At:', 'oneaccess' ) }</strong> { selectedRequest.requested_at }</p>
-						<p style={ { margin: '0' } }><strong>{ __( 'Status:', 'oneaccess' ) }</strong> { getStatusLabel( selectedRequest.status ) }</p>
+					<div
+						style={ {
+							marginBottom: '20px',
+							display: 'grid',
+							gridTemplateColumns: 'repeat(2,1fr)',
+							gap: '12px',
+						} }
+					>
+						<p style={ { margin: '0' } }>
+							<strong>{ __( 'User:', 'oneaccess' ) }</strong>{ ' ' }
+							{ decodeEntities( selectedRequest.user_name ) }
+						</p>
+						<p style={ { margin: '0' } }>
+							<strong>{ __( 'Email:', 'oneaccess' ) }</strong>{ ' ' }
+							{ selectedRequest.user_email }
+						</p>
+						<p style={ { margin: '0' } }>
+							<strong>{ __( 'Site:', 'oneaccess' ) }</strong>{ ' ' }
+							{ decodeEntities( selectedRequest.site_name ) }
+						</p>
+						<p style={ { margin: '0' } }>
+							<strong>
+								{ __( 'Requested By:', 'oneaccess' ) }
+							</strong>{ ' ' }
+							{ decodeEntities( selectedRequest.requested_by ) }
+						</p>
+						<p style={ { margin: '0' } }>
+							<strong>
+								{ __( 'Requested At:', 'oneaccess' ) }
+							</strong>{ ' ' }
+							{ selectedRequest.requested_at }
+						</p>
+						<p style={ { margin: '0' } }>
+							<strong>{ __( 'Status:', 'oneaccess' ) }</strong>{ ' ' }
+							{ getStatusLabel( selectedRequest.status ) }
+						</p>
 					</div>
 
 					<h3>{ __( 'Requested Changes:', 'oneaccess' ) }</h3>
 					{ renderChangesTable( selectedRequest ) }
 
 					{ selectedRequest.status === 'pending' && (
-						<div style={ { marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'flex-end' } }>
+						<div
+							style={ {
+								marginTop: '20px',
+								display: 'flex',
+								gap: '10px',
+								justifyContent: 'flex-end',
+							} }
+						>
 							<Button
 								variant="secondary"
 								isDestructive
@@ -508,7 +671,9 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 							</Button>
 							<Button
 								variant="primary"
-								onClick={ () => handleAcceptRequest( selectedRequest ) }
+								onClick={ () =>
+									handleAcceptRequest( selectedRequest )
+								}
 								disabled={ isProcessing }
 								isBusy={ isProcessing }
 							>
@@ -516,37 +681,85 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 							</Button>
 						</div>
 					) }
-					{ selectedRequest.status === 'rejected' && selectedRequest.rejection_comment && selectedRequest.rejection_comment.trim().length > 0 && (
-						<div style={ { marginTop: '20px', background: '#fee2e2', borderLeft: '4px solid #dc2626', borderRadius: '4px', padding: '12px 16px' } }>
-							<p style={ { fontSize: '15px', color: '#7f1d1d', margin: '0' } }>
-								<strong style={ { color: '#991b1b', fontWeight: '600' } }>{ __( 'Rejection Comment:', 'oneaccess' ) }</strong>
-								<span>{ decodeEntities( selectedRequest.rejection_comment ) }</span>
-							</p>
-						</div>
-					) }
+					{ selectedRequest.status === 'rejected' &&
+						selectedRequest.rejection_comment &&
+						selectedRequest.rejection_comment.trim().length > 0 && (
+							<div
+								style={ {
+									marginTop: '20px',
+									background: '#fee2e2',
+									borderLeft: '4px solid #dc2626',
+									borderRadius: '4px',
+									padding: '12px 16px',
+								} }
+							>
+								<p
+									style={ {
+										fontSize: '15px',
+										color: '#7f1d1d',
+										margin: '0',
+									} }
+								>
+									<strong
+										style={ {
+											color: '#991b1b',
+											fontWeight: '600',
+										} }
+									>
+										{ __(
+											'Rejection Comment:',
+											'oneaccess'
+										) }
+									</strong>
+									<span>
+										{ decodeEntities(
+											selectedRequest.rejection_comment
+										) }
+									</span>
+								</p>
+							</div>
+						) }
 				</Modal>
 			) }
 
 			{ /* Reject Request Modal */ }
 			{ isRejectModalOpen && (
 				<Modal
-					title={ __( 'Reject Profile Updates Changes', 'oneaccess' ) }
+					title={ __(
+						'Reject Profile Updates Changes',
+						'oneaccess'
+					) }
 					onRequestClose={ () => {
 						setIsRejectModalOpen( false );
 						setRejectionComment( '' );
 					} }
 					size="medium"
-					shouldCloseOnClickOutside={ true }
+					shouldCloseOnClickOutside
 				>
-					<p>{ __( 'Please provide a reason for rejecting this profile update request:', 'oneaccess' ) }</p>
+					<p>
+						{ __(
+							'Please provide a reason for rejecting this profile update request:',
+							'oneaccess'
+						) }
+					</p>
 					<TextareaControl
-						placeholder={ __( 'Enter rejection reason…', 'oneaccess' ) }
+						placeholder={ __(
+							'Enter rejection reason…',
+							'oneaccess'
+						) }
 						value={ rejectionComment }
 						onChange={ setRejectionComment }
 						rows={ 4 }
 						__nextHasNoMarginBottom
 					/>
-					<div style={ { marginTop: '20px', display: 'flex', gap: '10px', justifyContent: 'flex-end' } }>
+					<div
+						style={ {
+							marginTop: '20px',
+							display: 'flex',
+							gap: '10px',
+							justifyContent: 'flex-end',
+						} }
+					>
 						<Button
 							variant="secondary"
 							onClick={ () => {
@@ -563,7 +776,9 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 							variant="primary"
 							onClick={ handleRejectRequest }
 							isDestructive
-							disabled={ isProcessing || ! rejectionComment.trim() }
+							disabled={
+								isProcessing || ! rejectionComment.trim()
+							}
 							isBusy={ isProcessing }
 						>
 							{ __( 'Reject Request', 'oneaccess' ) }
@@ -576,7 +791,11 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 				<Snackbar
 					isDismissible
 					status={ notice.type }
-					className={ notice.type === 'error' ? 'oneaccess-error-notice' : 'oneaccess-success-notice' }
+					className={
+						notice.type === 'error'
+							? 'oneaccess-error-notice'
+							: 'oneaccess-success-notice'
+					}
 					onRemove={ () => setNotice( { type: '', message: '' } ) }
 				>
 					{ notice.message }

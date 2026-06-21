@@ -1,9 +1,11 @@
 <?php
 /**
- * Enqueue assets for OneAccess.
+ * Registers plugin assets.
  *
- * @package OneAccess
+ * @package OneAccess\Modules\Core
  */
+
+declare( strict_types = 1 );
 
 namespace OneAccess\Modules\Core;
 
@@ -13,7 +15,7 @@ use OneAccess\Modules\Settings\Settings;
 /**
  * Class Assets
  */
-class Assets implements Registrable {
+final class Assets implements Registrable {
 	/**
 	 * The relative path to the built assets directory.
 	 * No preceding or trailing slashes.
@@ -58,16 +60,18 @@ class Assets implements Registrable {
 	private string $plugin_url;
 
 	/**
-	 * Prepare localized data.
+	 * Get localized data for scripts.
+	 *
+	 * @return array<string,mixed>
 	 */
 	public static function get_localized_data(): array {
 		if ( empty( self::$localized_data ) ) {
 			self::$localized_data = [
-				'restUrl'      => esc_url( home_url( '/wp-json' ) ),
-				'restNonce'    => wp_create_nonce( 'wp_rest' ),
-				'api_key'      => Settings::get_api_key(),
-				'settingsLink' => esc_url( admin_url( 'admin.php?page=oneaccess-settings' ) ),
-				'siteType'     => Settings::get_site_type(),
+				'nonce'    => wp_create_nonce( 'wp_rest' ),
+				'api_key'  => Settings::get_api_key(),
+				'restUrl'  => esc_url( home_url( '/wp-json/' ) ),
+				'setupUrl' => esc_url( admin_url( 'admin.php?page=oneaccess-settings' ) ),
+				'siteType' => Settings::get_site_type(),
 			];
 		}
 
@@ -86,30 +90,50 @@ class Assets implements Registrable {
 	 * {@inheritDoc}
 	 */
 	public function register_hooks(): void {
-		add_action( 'admin_enqueue_scripts', [ $this, 'register_assets' ], 20, 1 );
+		add_action( 'admin_enqueue_scripts', [ $this, 'register_assets' ] );
+		add_action( 'admin_enqueue_scripts', [ $this, 'enqueue_scripts' ] );
 
 		// Add defer attribute to certain plugin bundles to improve admin load performance.
 		add_filter( 'script_loader_tag', [ $this, 'defer_scripts' ], 10, 2 );
 	}
 
 	/**
-	 * Register admin assets to WordPress.
-	 *
-	 * Assets are registered once centrally, and enqueued in the modules that need them.
+	 * Register all scripts and styles.
 	 */
 	public function register_assets(): void {
+		$this->register_script(
+			self::SETTINGS_SCRIPT_HANDLE,
+			'settings',
+		);
+		$this->register_style(
+			self::SETTINGS_SCRIPT_HANDLE,
+			'settings',
+		);
 
-		$this->register_script( self::SETTINGS_SCRIPT_HANDLE, 'settings' );
-		$this->register_style( self::SETTINGS_SCRIPT_HANDLE, 'settings' );
+		$this->register_script(
+			self::ONBOARDING_SCRIPT_HANDLE,
+			'onboarding',
+		);
+		$this->register_style(
+			self::ONBOARDING_SCRIPT_HANDLE,
+			'onboarding',
+			[ 'wp-components' ],
+		);
 
-		$this->register_script( self::ONBOARDING_SCRIPT_HANDLE, 'onboarding' );
-		$this->register_style( self::ONBOARDING_SCRIPT_HANDLE, 'onboarding', [ 'wp-components' ] );
+		$this->register_script(
+			self::MANAGE_USERS_SCRIPT_HANDLE,
+			'manage-users',
+		);
+		$this->register_style(
+			self::MANAGE_USERS_SCRIPT_HANDLE,
+			'manage-users',
+			[ 'wp-components' ],
+		);
 
-		$this->register_script( self::MANAGE_USERS_SCRIPT_HANDLE, 'manage-users' );
-		$this->register_style( self::MANAGE_USERS_SCRIPT_HANDLE, 'manage-users', [ 'wp-components' ] );
-
-		$this->register_style( self::ADMIN_USER_STYLES_HANDLE, 'admin-user' );
-		$this->register_script( self::USER_PROFILE_SCRIPT_HANDLE, 'user-profile' );
+		$this->register_script(
+			self::USER_PROFILE_SCRIPT_HANDLE,
+			'user-profile',
+		);
 
 		$this->register_style(
 			self::ADMIN_STYLES_HANDLE,
@@ -117,6 +141,17 @@ class Assets implements Registrable {
 			[ 'wp-components' ],
 		);
 
+		$this->register_style(
+			self::ADMIN_USER_STYLES_HANDLE,
+			'admin-user',
+		);
+	}
+
+	/**
+	 * Add scripts and styles to the page.
+	 */
+	public function enqueue_scripts(): void {
+		// @todo Only enqueue on OneAccess admin pages.
 		wp_enqueue_style( self::ADMIN_STYLES_HANDLE );
 	}
 
@@ -130,6 +165,7 @@ class Assets implements Registrable {
 	public function defer_scripts( string $tag, string $handle ): string {
 		$defer_handles = [
 			self::SETTINGS_SCRIPT_HANDLE,
+			self::ONBOARDING_SCRIPT_HANDLE,
 			self::USER_PROFILE_SCRIPT_HANDLE,
 		];
 

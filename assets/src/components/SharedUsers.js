@@ -30,9 +30,13 @@ import { decodeEntities } from '@wordpress/html-entities';
 /**
  * Internal dependencies
  */
-import { checkPasswordStrength, strengthWidths, getStrengthColor } from '../js/utils';
+import {
+	checkPasswordStrength,
+	strengthWidths,
+	getStrengthColor,
+} from '../js/utils';
 
-const NONCE = OneAccess.restNonce;
+const NONCE = OneAccess.nonce;
 const API_NAMESPACE = OneAccess.restUrl + '/oneaccess/v1';
 const AVAILABLE_ROLES = OneAccess.availableRoles || [];
 const PER_PAGE = 20;
@@ -45,15 +49,18 @@ const SharedUsers = ( { availableSites } ) => {
 	} );
 	const [ users, setUsers ] = useState( [] );
 	const [ searchTerm, setSearchTerm ] = useState( '' );
-	const [ debounceSearchTerm, setDebounceSearchTerm ] = useState( searchTerm );
+	const [ debounceSearchTerm, setDebounceSearchTerm ] =
+		useState( searchTerm );
 	const [ selectedSiteFilter, setSelectedSiteFilter ] = useState( '' );
 	const [ selectedUserRole, setSelectedUserRole ] = useState( '' );
 	const [ page, setPage ] = useState( 1 );
 	const [ totalPages, setTotalPages ] = useState( 1 );
 	const [ isDoingUsersCleanup, setIsDoingUsersCleanup ] = useState( false );
 	const [ isCleanupModalOpen, setIsCleanupModalOpen ] = useState( false );
-	const [ isRebuildingDeduplicatedIndex, setIsRebuildingDeduplicatedIndex ] = useState( false );
-	const [ showRebuildIndexModal, setShowRebuildIndexModal ] = useState( false );
+	const [ isRebuildingDeduplicatedIndex, setIsRebuildingDeduplicatedIndex ] =
+		useState( false );
+	const [ showRebuildIndexModal, setShowRebuildIndexModal ] =
+		useState( false );
 	const [ password, setPassword ] = useState( '' );
 	const [ showPassword, setShowPassword ] = useState( false );
 	const [ passwordStrength, setPasswordStrength ] = useState( '' );
@@ -68,8 +75,10 @@ const SharedUsers = ( { availableSites } ) => {
 	const [ selectedSitesToAdd, setSelectedSitesToAdd ] = useState( [] );
 	const [ isUpdatingRoles, setIsUpdatingRoles ] = useState( false );
 	const [ isAddingToSites, setIsAddingToSites ] = useState( false );
-	const [ showUserDeletionModal, setShowUserDeletionModal ] = useState( false );
-	const [ selectedSitesToDeleteUser, setSelectedSitesToDeleteUser ] = useState( [] );
+	const [ showUserDeletionModal, setShowUserDeletionModal ] =
+		useState( false );
+	const [ selectedSitesToDeleteUser, setSelectedSitesToDeleteUser ] =
+		useState( [] );
 	const [ isDeletingUser, setIsDeletingUser ] = useState( false );
 
 	// debounce search query to improve performance.
@@ -111,7 +120,7 @@ const SharedUsers = ( { availableSites } ) => {
 						'Content-Type': 'application/json',
 						'X-WP-Nonce': NONCE,
 					},
-				},
+				}
 			);
 
 			if ( ! response.ok ) {
@@ -129,28 +138,45 @@ const SharedUsers = ( { availableSites } ) => {
 				id: user.id,
 				username: user.email.split( '@' )[ 0 ], // Fallback username from email
 				email: user.email,
-				full_name: user.full_name || `${ user.first_name } ${ user.last_name }`.trim() || user.email,
+				full_name:
+					user.full_name ||
+					`${ user.first_name } ${ user.last_name }`.trim() ||
+					user.email,
 				first_name: user.first_name,
 				last_name: user.last_name,
-				sites: user.sites_info?.map( ( site ) => ( {
-					site_url: site.site_url,
-					site_name: site.site_name,
-					name: site.site_name,
-					url: site.site_url,
-					// Get the first role from roles array, or handle object structure
-					role: ( () => {
-						if ( Array.isArray( site.roles ) ) {
-							// return all roles as comma separated string and convert to available roles mapping.
-							return site?.roles?.map( ( role ) => AVAILABLE_ROLES[ role ] || role ).join( ', ' );
-						}
-						if ( typeof site.roles === 'object' && site.roles !== null ) {
-							return Object.values( site.roles )?.map( ( role ) => AVAILABLE_ROLES[ role ] || role ).join( ', ' );
-						}
-						return 'subscriber';
-					} )(),
-					roles: site.roles,
-					user_id: site.user_id,
-				} ) ) || [],
+				sites:
+					user.sites_info?.map( ( site ) => ( {
+						site_url: site.site_url,
+						site_name: site.site_name,
+						name: site.site_name,
+						url: site.site_url,
+						// Get the first role from roles array, or handle object structure
+						role: ( () => {
+							if ( Array.isArray( site.roles ) ) {
+								// return all roles as comma separated string and convert to available roles mapping.
+								return site?.roles
+									?.map(
+										( role ) =>
+											AVAILABLE_ROLES[ role ] || role
+									)
+									.join( ', ' );
+							}
+							if (
+								typeof site.roles === 'object' &&
+								site.roles !== null
+							) {
+								return Object.values( site.roles )
+									?.map(
+										( role ) =>
+											AVAILABLE_ROLES[ role ] || role
+									)
+									.join( ', ' );
+							}
+							return 'subscriber';
+						} )(),
+						roles: site.roles,
+						user_id: site.user_id,
+					} ) ) || [],
 				sites_info: user.sites_info,
 				all_roles: user.all_roles || [],
 				all_sites: user.all_sites || [],
@@ -163,7 +189,10 @@ const SharedUsers = ( { availableSites } ) => {
 		} catch ( error ) {
 			setNotice( {
 				type: 'error',
-				message: __( 'Failed to fetch users. Please try again later.', 'oneaccess' ),
+				message: __(
+					'Failed to fetch users. Please try again later.',
+					'oneaccess'
+				),
 			} );
 		} finally {
 			setIsLoading( false );
@@ -183,11 +212,15 @@ const SharedUsers = ( { availableSites } ) => {
 
 	// Get sites available for adding (sites user is not already assigned to)
 	const getAvailableSitesForUser = ( user ) => {
-		const userSiteUrls = user.sites?.map( ( site ) => {
-			const url = site.url || site.site_url || '';
-			return url.replace( /\/+$/, '' );
-		} ) || [];
-		return availableSites.filter( ( site ) => ! userSiteUrls.includes( site.url.replace( /\/+$/, '' ) ) );
+		const userSiteUrls =
+			user.sites?.map( ( site ) => {
+				const url = site.url || site.site_url || '';
+				return url.replace( /\/+$/, '' );
+			} ) || [];
+		return availableSites.filter(
+			( site ) =>
+				! userSiteUrls.includes( site.url.replace( /\/+$/, '' ) )
+		);
 	};
 
 	// Handle opening manage roles modal
@@ -197,7 +230,12 @@ const SharedUsers = ( { availableSites } ) => {
 		// Initialize user roles with current roles
 		const initialRoles = {};
 		user.sites?.forEach( ( site ) => {
-			initialRoles[ site.site_url ] = site.roles?.length > 0 ? site.roles?.[ 0 ] : ( Object.keys( AVAILABLE_ROLES ).find( ( key ) => AVAILABLE_ROLES[ key ] === site.role ) || '' );
+			initialRoles[ site.site_url ] =
+				site.roles?.length > 0
+					? site.roles?.[ 0 ]
+					: Object.keys( AVAILABLE_ROLES ).find(
+							( key ) => AVAILABLE_ROLES[ key ] === site.role
+					  ) || '';
 		} );
 
 		setUserRoles( initialRoles );
@@ -238,7 +276,7 @@ const SharedUsers = ( { availableSites } ) => {
 						email: currentUser.email,
 						sites: sitesToDelete,
 					} ),
-				},
+				}
 			);
 
 			if ( ! response.ok ) {
@@ -247,7 +285,9 @@ const SharedUsers = ( { availableSites } ) => {
 
 			const data = await response.json();
 			if ( ! data.success ) {
-				throw new Error( data.message || 'Failed to delete user from sites' );
+				throw new Error(
+					data.message || 'Failed to delete user from sites'
+				);
 			}
 
 			setNotice( {
@@ -287,7 +327,7 @@ const SharedUsers = ( { availableSites } ) => {
 						email: selectedUser.email,
 						roles: userRoles,
 					} ),
-				},
+				}
 			);
 
 			if ( ! response.ok ) {
@@ -309,7 +349,10 @@ const SharedUsers = ( { availableSites } ) => {
 		} catch ( error ) {
 			setNotice( {
 				type: 'error',
-				message: __( 'Failed to update user roles. Please try again.', 'oneaccess' ),
+				message: __(
+					'Failed to update user roles. Please try again.',
+					'oneaccess'
+				),
 			} );
 		} finally {
 			setIsUpdatingRoles( false );
@@ -336,7 +379,7 @@ const SharedUsers = ( { availableSites } ) => {
 						sites: selectedSitesToAdd,
 						password,
 					} ),
-				},
+				}
 			);
 
 			if ( ! response.ok ) {
@@ -345,13 +388,19 @@ const SharedUsers = ( { availableSites } ) => {
 
 			const data = await response.json();
 			if ( ! data.success ) {
-				throw new Error( data.message || 'Failed to add user to sites' );
+				throw new Error(
+					data.message || 'Failed to add user to sites'
+				);
 			}
 
-			const siteNames = selectedSitesToAdd?.map( ( site ) => site.name ).join( ', ' );
+			const siteNames = selectedSitesToAdd
+				?.map( ( site ) => site.name )
+				.join( ', ' );
 			setNotice( {
 				type: 'success',
-				message: __( 'User added to sites successfully:', 'oneaccess' ) + siteNames,
+				message:
+					__( 'User added to sites successfully:', 'oneaccess' ) +
+					siteNames,
 			} );
 
 			// Refresh users list
@@ -360,7 +409,10 @@ const SharedUsers = ( { availableSites } ) => {
 		} catch ( error ) {
 			setNotice( {
 				type: 'error',
-				message: __( 'Failed to add user to sites. Please try again.', 'oneaccess' ),
+				message: __(
+					'Failed to add user to sites. Please try again.',
+					'oneaccess'
+				),
 			} );
 		} finally {
 			setIsAddingToSites( false );
@@ -375,7 +427,10 @@ const SharedUsers = ( { availableSites } ) => {
 
 	// Get role label from role value
 	const getRoleLabel = ( roleValue ) => {
-		return AVAILABLE_ROLES[ roleValue ] || ( roleValue ?? __( 'No Role', 'oneaccess' ) );
+		return (
+			AVAILABLE_ROLES[ roleValue ] ||
+			( roleValue ?? __( 'No Role', 'oneaccess' ) )
+		);
 	};
 
 	const handleUsersCleanup = useCallback( async () => {
@@ -389,13 +444,16 @@ const SharedUsers = ( { availableSites } ) => {
 						'Content-Type': 'application/json',
 						'X-WP-Nonce': NONCE,
 					},
-				},
+				}
 			);
 
 			if ( ! response.ok ) {
 				setNotice( {
 					type: 'error',
-					message: __( 'Failed to cleanup disconnected sites users.', 'oneaccess' ),
+					message: __(
+						'Failed to cleanup disconnected sites users.',
+						'oneaccess'
+					),
 				} );
 			}
 
@@ -404,12 +462,20 @@ const SharedUsers = ( { availableSites } ) => {
 			if ( ! data.success ) {
 				setNotice( {
 					type: 'error',
-					message: data.message || __( 'Failed to cleanup disconnected sites users.', 'oneaccess' ),
+					message:
+						data.message ||
+						__(
+							'Failed to cleanup disconnected sites users.',
+							'oneaccess'
+						),
 				} );
 			} else {
 				setNotice( {
 					type: 'success',
-					message: __( 'Async action is scheduled to do cleanup of disconnected sites users.', 'oneaccess' ),
+					message: __(
+						'Async action is scheduled to do cleanup of disconnected sites users.',
+						'oneaccess'
+					),
 				} );
 				// Refresh users list
 				await fetchUsers();
@@ -417,7 +483,10 @@ const SharedUsers = ( { availableSites } ) => {
 		} catch ( error ) {
 			setNotice( {
 				type: 'error',
-				message: __( 'Failed to cleanup disconnected sites users.', 'oneaccess' ),
+				message: __(
+					'Failed to cleanup disconnected sites users.',
+					'oneaccess'
+				),
 			} );
 		} finally {
 			setIsDoingUsersCleanup( false );
@@ -435,13 +504,16 @@ const SharedUsers = ( { availableSites } ) => {
 						'Content-Type': 'application/json',
 						'X-WP-Nonce': NONCE,
 					},
-				},
+				}
 			);
 
 			if ( ! response.ok ) {
 				setNotice( {
 					type: 'error',
-					message: __( 'Failed to rebuild deduplicated users index.', 'oneaccess' ),
+					message: __(
+						'Failed to rebuild deduplicated users index.',
+						'oneaccess'
+					),
 				} );
 			}
 
@@ -450,18 +522,29 @@ const SharedUsers = ( { availableSites } ) => {
 			if ( ! data.success ) {
 				setNotice( {
 					type: 'error',
-					message: data.message || __( 'Failed to rebuild deduplicated users index.', 'oneaccess' ),
+					message:
+						data.message ||
+						__(
+							'Failed to rebuild deduplicated users index.',
+							'oneaccess'
+						),
 				} );
 			} else {
 				setNotice( {
 					type: 'success',
-					message: __( 'Async action is scheduled to rebuild deduplicated users index.', 'oneaccess' ),
+					message: __(
+						'Async action is scheduled to rebuild deduplicated users index.',
+						'oneaccess'
+					),
 				} );
 			}
 		} catch ( error ) {
 			setNotice( {
 				type: 'error',
-				message: __( 'Failed to rebuild deduplicated users index.', 'oneaccess' ),
+				message: __(
+					'Failed to rebuild deduplicated users index.',
+					'oneaccess'
+				),
 			} );
 		} finally {
 			setIsRebuildingDeduplicatedIndex( false );
@@ -472,20 +555,25 @@ const SharedUsers = ( { availableSites } ) => {
 	const fetchStrongPassword = useCallback( async () => {
 		try {
 			const response = await fetch(
-				`${ API_NAMESPACE }/generate-strong-password?${ new Date().getTime().toString() }`,
+				`${ API_NAMESPACE }/generate-strong-password?${ new Date()
+					.getTime()
+					.toString() }`,
 				{
 					method: 'GET',
 					headers: {
 						'Content-Type': 'application/json',
 						'X-WP-Nonce': NONCE,
 					},
-				},
+				}
 			);
 
 			if ( ! response.ok ) {
 				setPasswordNotice( {
 					type: 'error',
-					message: __( 'Failed to generate password. Please try again later.', 'oneaccess' ),
+					message: __(
+						'Failed to generate password. Please try again later.',
+						'oneaccess'
+					),
 				} );
 				throw new Error( 'Failed to generate password' );
 			}
@@ -493,7 +581,10 @@ const SharedUsers = ( { availableSites } ) => {
 			if ( ! data.password ) {
 				setPasswordNotice( {
 					type: 'error',
-					message: __( 'No password generated. Please try again.', 'oneaccess' ),
+					message: __(
+						'No password generated. Please try again.',
+						'oneaccess'
+					),
 				} );
 				return '';
 			}
@@ -505,7 +596,10 @@ const SharedUsers = ( { availableSites } ) => {
 		} catch ( error ) {
 			setPasswordNotice( {
 				type: 'error',
-				message: __( 'Failed to generate a password. Please try again later.', 'oneaccess' ),
+				message: __(
+					'Failed to generate a password. Please try again later.',
+					'oneaccess'
+				),
 			} );
 			return '';
 		}
@@ -522,9 +616,12 @@ const SharedUsers = ( { availableSites } ) => {
 			const currentRoleInState = userRoles[ site.site_url ];
 
 			// Get the original role key from the user data
-			const originalRole = site.roles?.length > 0
-				? site.roles[ 0 ]
-				: ( Object.keys( AVAILABLE_ROLES ).find( ( key ) => AVAILABLE_ROLES[ key ] === site.role ) || 'subscriber' );
+			const originalRole =
+				site.roles?.length > 0
+					? site.roles[ 0 ]
+					: Object.keys( AVAILABLE_ROLES ).find(
+							( key ) => AVAILABLE_ROLES[ key ] === site.role
+					  ) || 'subscriber';
 
 			return currentRoleInState !== originalRole;
 		} );
@@ -540,14 +637,15 @@ const SharedUsers = ( { availableSites } ) => {
 					>
 						<Button
 							variant="primary"
-							onClick={
-								() => setIsCleanupModalOpen( true )
-							}
+							onClick={ () => setIsCleanupModalOpen( true ) }
 							isBusy={ isDoingUsersCleanup }
-							isDestructive={ true }
+							isDestructive
 							icon={ trash }
 						>
-							{ __( 'Cleanup Disconnected Sites Users', 'oneaccess' ) }
+							{ __(
+								'Cleanup Disconnected Sites Users',
+								'oneaccess'
+							) }
 						</Button>
 						<Button
 							variant="secondary"
@@ -557,14 +655,24 @@ const SharedUsers = ( { availableSites } ) => {
 							isBusy={ isRebuildingDeduplicatedIndex }
 							icon={ plus }
 						>
-							{ __( 'Rebuild Deduplicated Users Index', 'oneaccess' ) }
+							{ __(
+								'Rebuild Deduplicated Users Index',
+								'oneaccess'
+							) }
 						</Button>
 					</div>
 				</CardHeader>
 				<CardBody>
-					<Grid columns="4" gap="4" style={ { alignItems: 'flex-end' } }>
+					<Grid
+						columns="4"
+						gap="4"
+						style={ { alignItems: 'flex-end' } }
+					>
 						<TextControl
-							placeholder={ __( 'Search users by name or email..', 'oneaccess' ) }
+							placeholder={ __(
+								'Search users by name or email..',
+								'oneaccess'
+							) }
 							value={ searchTerm }
 							onChange={ ( value ) => setSearchTerm( value ) }
 							label={ __( 'Search Users', 'oneaccess' ) }
@@ -575,7 +683,10 @@ const SharedUsers = ( { availableSites } ) => {
 							label={ __( 'Filter by site', 'oneaccess' ) }
 							value={ selectedSiteFilter }
 							options={ [
-								{ label: __( 'All Sites', 'oneaccess' ), value: '' },
+								{
+									label: __( 'All Sites', 'oneaccess' ),
+									value: '',
+								},
 								...availableSites?.map( ( site ) => ( {
 									label: site.name,
 									value: site.url,
@@ -589,11 +700,16 @@ const SharedUsers = ( { availableSites } ) => {
 							label={ __( 'Filter by role', 'oneaccess' ) }
 							value={ selectedUserRole }
 							options={ [
-								{ label: __( 'All Roles', 'oneaccess' ), value: '' },
-								...Object.entries( AVAILABLE_ROLES )?.map( ( [ role, label ] ) => ( {
-									label,
-									value: role,
-								} ) ),
+								{
+									label: __( 'All Roles', 'oneaccess' ),
+									value: '',
+								},
+								...Object.entries( AVAILABLE_ROLES )?.map(
+									( [ role, label ] ) => ( {
+										label,
+										value: role,
+									} )
+								),
 							] }
 							onChange={ setSelectedUserRole }
 							__next40pxDefaultSize
@@ -601,7 +717,10 @@ const SharedUsers = ( { availableSites } ) => {
 						/>
 					</Grid>
 
-					<table className="wp-list-table widefat fixed striped" style={ { marginTop: '16px' } }>
+					<table
+						className="wp-list-table widefat fixed striped"
+						style={ { marginTop: '16px' } }
+					>
 						<thead>
 							<tr>
 								<th>{ __( 'Name', 'oneaccess' ) }</th>
@@ -613,122 +732,222 @@ const SharedUsers = ( { availableSites } ) => {
 						<tbody>
 							{ isLoading ? (
 								<tr>
-									<td colSpan="4" style={ { textAlign: 'center', padding: '32px' } }>
+									<td
+										colSpan="4"
+										style={ {
+											textAlign: 'center',
+											padding: '32px',
+										} }
+									>
 										<Spinner />
-										<div style={ { marginTop: '8px' } }>{ __( 'Loading users…', 'oneaccess' ) }</div>
+										<div style={ { marginTop: '8px' } }>
+											{ __(
+												'Loading users…',
+												'oneaccess'
+											) }
+										</div>
 									</td>
 								</tr>
 							) : null }
 
 							{ ! isLoading && users.length === 0 && (
 								<tr>
-									<td colSpan="4" style={ { textAlign: 'center', padding: '32px' } }>
-										<p style={ { margin: 0, color: '#6c757d' } }>
-											{ __( 'No users found.', 'oneaccess' ) }
+									<td
+										colSpan="4"
+										style={ {
+											textAlign: 'center',
+											padding: '32px',
+										} }
+									>
+										<p
+											style={ {
+												margin: 0,
+												color: '#6c757d',
+											} }
+										>
+											{ __(
+												'No users found.',
+												'oneaccess'
+											) }
 										</p>
 									</td>
 								</tr>
 							) }
 
-							{ ! isLoading && users?.map( ( user, index ) => (
-								<tr key={ `${ user.id }-${ index }` }>
-									<td>
-										<strong>{ decodeEntities( user.full_name || user.username ) }</strong>
-									</td>
-									<td>{ user.email }</td>
-									<td>
-										<div
-											style={ {
-												display: 'flex',
-												flexDirection: 'row',
-												alignItems: 'center',
-												gap: '4px',
-												flexWrap: 'wrap',
-											} }
-										>
-											{ user.sites?.length > 0 ? (
-												user.sites?.map( ( site, siteIndex ) => (
+							{ ! isLoading &&
+								users?.map( ( user, index ) => (
+									<tr key={ `${ user.id }-${ index }` }>
+										<td>
+											<strong>
+												{ decodeEntities(
+													user.full_name ||
+														user.username
+												) }
+											</strong>
+										</td>
+										<td>{ user.email }</td>
+										<td>
+											<div
+												style={ {
+													display: 'flex',
+													flexDirection: 'row',
+													alignItems: 'center',
+													gap: '4px',
+													flexWrap: 'wrap',
+												} }
+											>
+												{ user.sites?.length > 0 ? (
+													user.sites?.map(
+														( site, siteIndex ) => (
+															<span
+																key={ `${ site.site_url }-${ siteIndex }` }
+																className="site-badge"
+																style={ {
+																	display:
+																		'inline-block',
+																	margin: '0',
+																	padding:
+																		'4px 10px',
+																	backgroundColor:
+																		'#007cba',
+																	color: '#fff',
+																	borderRadius:
+																		'4px',
+																	fontSize:
+																		'12px',
+																	fontWeight:
+																		'500',
+																} }
+																title={ `${
+																	site.site_name
+																} - ${ getRoleLabel(
+																	site.role
+																) }` }
+															>
+																{ decodeEntities(
+																	site.site_name
+																) }{ ' ' }
+																(
+																{ getRoleLabel(
+																	site.role
+																) }
+																)
+															</span>
+														)
+													)
+												) : (
 													<span
-														key={ `${ site.site_url }-${ siteIndex }` }
-														className="site-badge"
 														style={ {
-															display: 'inline-block',
-															margin: '0',
-															padding: '4px 10px',
-															backgroundColor: '#007cba',
-															color: '#fff',
-															borderRadius: '4px',
+															color: '#6c757d',
 															fontSize: '12px',
-															fontWeight: '500',
 														} }
-														title={ `${ site.site_name } - ${ getRoleLabel( site.role ) }` }
 													>
-														{ decodeEntities( site.site_name ) } ({ getRoleLabel( site.role ) })
+														{ __(
+															'No sites assigned',
+															'oneaccess'
+														) }
 													</span>
-												) )
-											) : (
-												<span style={ { color: '#6c757d', fontSize: '12px' } }>
-													{ __( 'No sites assigned', 'oneaccess' ) }
-												</span>
-											) }
-										</div>
-									</td>
-									<td>
-										<DropdownMenu
-											icon={ moreVertical }
-											label={ __( 'User actions', 'oneaccess' ) }
-											className="user-actions-dropdown"
-											popoverProps={ { position: 'bottom left' } }
-										>
-											{ ( { onClose } ) => (
-												<>
-													<MenuGroup>
-														<MenuItem
-															icon={ people }
-															onClick={ () => {
-																handleManageRoles( user );
-																onClose();
-															} }
-															disabled={ ! user.sites || user.sites.length === 0 }
-														>
-															{ __( 'Manage Roles', 'oneaccess' ) }
-														</MenuItem>
-														{ getAvailableSitesForUser( user ).length > 0 && (
+												) }
+											</div>
+										</td>
+										<td>
+											<DropdownMenu
+												icon={ moreVertical }
+												label={ __(
+													'User actions',
+													'oneaccess'
+												) }
+												className="user-actions-dropdown"
+												popoverProps={ {
+													position: 'bottom left',
+												} }
+											>
+												{ ( { onClose } ) => (
+													<>
+														<MenuGroup>
 															<MenuItem
-																icon={ globe }
+																icon={ people }
 																onClick={ () => {
-																	handleAddToSites( user );
+																	handleManageRoles(
+																		user
+																	);
 																	onClose();
 																} }
+																disabled={
+																	! user.sites ||
+																	user.sites
+																		.length ===
+																		0
+																}
 															>
-																{ __( 'Add to Sites', 'oneaccess' ) }
+																{ __(
+																	'Manage Roles',
+																	'oneaccess'
+																) }
 															</MenuItem>
-														) }
-													</MenuGroup>
-													<MenuGroup>
-														<MenuItem
-															icon={ trash }
-															onClick={ () => {
-																handleUserDeletion( user );
-																onClose();
-															} }
-															isDestructive
-															disabled={ ! user.sites || user.sites.length === 0 }
-														>
-															{ __( 'Delete User', 'oneaccess' ) }
-														</MenuItem>
-													</MenuGroup>
-												</>
-											) }
-										</DropdownMenu>
-									</td>
-								</tr>
-							) ) }
+															{ getAvailableSitesForUser(
+																user
+															).length > 0 && (
+																<MenuItem
+																	icon={
+																		globe
+																	}
+																	onClick={ () => {
+																		handleAddToSites(
+																			user
+																		);
+																		onClose();
+																	} }
+																>
+																	{ __(
+																		'Add to Sites',
+																		'oneaccess'
+																	) }
+																</MenuItem>
+															) }
+														</MenuGroup>
+														<MenuGroup>
+															<MenuItem
+																icon={ trash }
+																onClick={ () => {
+																	handleUserDeletion(
+																		user
+																	);
+																	onClose();
+																} }
+																isDestructive
+																disabled={
+																	! user.sites ||
+																	user.sites
+																		.length ===
+																		0
+																}
+															>
+																{ __(
+																	'Delete User',
+																	'oneaccess'
+																) }
+															</MenuItem>
+														</MenuGroup>
+													</>
+												) }
+											</DropdownMenu>
+										</td>
+									</tr>
+								) ) }
 						</tbody>
 					</table>
 
-					{ (
-						<div style={ { marginTop: '16px', display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'center' } }>
+					{
+						<div
+							style={ {
+								marginTop: '16px',
+								display: 'flex',
+								gap: '8px',
+								alignItems: 'center',
+								justifyContent: 'center',
+							} }
+						>
 							<Button
 								variant="secondary"
 								onClick={ () => handlePageChange( page - 1 ) }
@@ -736,15 +955,15 @@ const SharedUsers = ( { availableSites } ) => {
 							>
 								{ __( 'Previous', 'oneaccess' ) }
 							</Button>
-							<div style={ { color: '#6c757d', fontSize: '14px' } }>
-								{
-									sprintf(
-										/* translators: 1: Current page number. 2: Total pages. */
-										__( 'Page %1$s of %2$s', 'oneaccess' ),
-										page,
-										totalPages === 0 ? 1 : totalPages,
-									)
-								}
+							<div
+								style={ { color: '#6c757d', fontSize: '14px' } }
+							>
+								{ sprintf(
+									/* translators: 1: Current page number. 2: Total pages. */
+									__( 'Page %1$s of %2$s', 'oneaccess' ),
+									page,
+									totalPages === 0 ? 1 : totalPages
+								) }
 							</div>
 							<Button
 								variant="secondary"
@@ -754,7 +973,7 @@ const SharedUsers = ( { availableSites } ) => {
 								{ __( 'Next', 'oneaccess' ) }
 							</Button>
 						</div>
-					) }
+					}
 				</CardBody>
 			</Card>
 
@@ -763,14 +982,24 @@ const SharedUsers = ( { availableSites } ) => {
 				<Modal
 					title={ __( 'Manage User Roles', 'oneaccess' ) }
 					onRequestClose={ () => setShowManageRolesModal( false ) }
-					shouldCloseOnClickOutside={ true }
+					shouldCloseOnClickOutside
 					size="medium"
 				>
 					<VStack spacing="4">
 						<div>
-							<p style={ { margin: 0, color: '#6c757d', fontSize: '14px' } }>
+							<p
+								style={ {
+									margin: 0,
+									color: '#6c757d',
+									fontSize: '14px',
+								} }
+							>
 								{ __( 'Manage roles for user:', 'oneaccess' ) }
-								<strong>{ selectedUser.full_name || selectedUser.username }</strong> ({ selectedUser.email })
+								<strong>
+									{ selectedUser.full_name ||
+										selectedUser.username }
+								</strong>{ ' ' }
+								({ selectedUser.email })
 							</p>
 						</div>
 
@@ -794,20 +1023,37 @@ const SharedUsers = ( { availableSites } ) => {
 										} }
 									>
 										<div style={ { marginBottom: '8px' } }>
-											<div style={ { fontWeight: '500', color: '#23282d' } }>
+											<div
+												style={ {
+													fontWeight: '500',
+													color: '#23282d',
+												} }
+											>
 												{ site.site_name }
 											</div>
-											<div style={ { fontSize: '12px', color: '#6c757d' } }>
+											<div
+												style={ {
+													fontSize: '12px',
+													color: '#6c757d',
+												} }
+											>
 												{ site.site_url }
 											</div>
 										</div>
 										<SelectControl
-											value={ userRoles[ site.site_url ] || 'subscriber' }
+											value={
+												userRoles[ site.site_url ] ||
+												'subscriber'
+											}
 											options={ [
-												...Object.entries( AVAILABLE_ROLES )?.map( ( [ role, label ] ) => ( {
-													value: role,
-													label,
-												} ) ),
+												...Object.entries(
+													AVAILABLE_ROLES
+												)?.map(
+													( [ role, label ] ) => ( {
+														value: role,
+														label,
+													} )
+												),
 											] }
 											onChange={ ( value ) => {
 												setUserRoles( ( prev ) => ( {
@@ -826,7 +1072,9 @@ const SharedUsers = ( { availableSites } ) => {
 						<HStack justify="flex-end" spacing="3">
 							<Button
 								variant="secondary"
-								onClick={ () => setShowManageRolesModal( false ) }
+								onClick={ () =>
+									setShowManageRolesModal( false )
+								}
 							>
 								{ __( 'Cancel', 'oneaccess' ) }
 							</Button>
@@ -840,7 +1088,10 @@ const SharedUsers = ( { availableSites } ) => {
 								}
 								isBusy={ isUpdatingRoles }
 							>
-								<Dashicon icon="admin-users" style={ { marginRight: '8px' } } />
+								<Dashicon
+									icon="admin-users"
+									style={ { marginRight: '8px' } }
+								/>
 								{ __( 'Update Roles', 'oneaccess' ) }
 							</Button>
 						</HStack>
@@ -857,13 +1108,17 @@ const SharedUsers = ( { availableSites } ) => {
 						setPassword( '' );
 						setPasswordNotice( null );
 					} }
-					shouldCloseOnClickOutside={ true }
+					shouldCloseOnClickOutside
 					size="medium"
 				>
 					{ passwordNotice && (
 						<Notice
-							status={ passwordNotice.type === 'error' ? 'error' : 'success' }
-							isDismissible={ true }
+							status={
+								passwordNotice.type === 'error'
+									? 'error'
+									: 'success'
+							}
+							isDismissible
 							onRemove={ () => setPasswordNotice( null ) }
 						>
 							<p style={ { margin: 0 } }>
@@ -873,33 +1128,76 @@ const SharedUsers = ( { availableSites } ) => {
 					) }
 					<VStack spacing="4">
 						<div>
-							<p style={ { margin: 0, color: '#6c757d', fontSize: '14px' } }>
-								{ __( 'Add user to additional sites:', 'oneaccess' ) }
-								<strong>{ selectedUser.full_name || selectedUser.username }</strong> ({ selectedUser.email })
+							<p
+								style={ {
+									margin: 0,
+									color: '#6c757d',
+									fontSize: '14px',
+								} }
+							>
+								{ __(
+									'Add user to additional sites:',
+									'oneaccess'
+								) }
+								<strong>
+									{ selectedUser.full_name ||
+										selectedUser.username }
+								</strong>{ ' ' }
+								({ selectedUser.email })
 							</p>
-							<p style={ { margin: 0, color: '#1f1c1a', fontSize: '16px', fontWeight: 600 } } >
-								{ __( 'Please note that this will be an async operation which will take a few minutes to complete.', 'oneaccess' ) }
+							<p
+								style={ {
+									margin: 0,
+									color: '#1f1c1a',
+									fontSize: '16px',
+									fontWeight: 600,
+								} }
+							>
+								{ __(
+									'Please note that this will be an async operation which will take a few minutes to complete.',
+									'oneaccess'
+								) }
 							</p>
 						</div>
 
-						{ getAvailableSitesForUser( selectedUser ).length > 0 ? (
+						{ getAvailableSitesForUser( selectedUser ).length >
+						0 ? (
 							<>
 								<HStack justify="flex-start" spacing="3">
 									<CheckboxControl
-										label={ __( 'Select All Sites', 'oneaccess' ) }
-										checked={ selectedSitesToAdd.length === getAvailableSitesForUser( selectedUser ).length }
+										label={ __(
+											'Select All Sites',
+											'oneaccess'
+										) }
+										checked={
+											selectedSitesToAdd.length ===
+											getAvailableSitesForUser(
+												selectedUser
+											).length
+										}
 										onChange={ () => {
-											const availableSitesToAddUser = getAvailableSitesForUser( selectedUser );
-											if ( selectedSitesToAdd.length === availableSitesToAddUser.length ) {
+											const availableSitesToAddUser =
+												getAvailableSitesForUser(
+													selectedUser
+												);
+											if (
+												selectedSitesToAdd.length ===
+												availableSitesToAddUser.length
+											) {
 												setSelectedSitesToAdd( [] );
 											} else {
 												setSelectedSitesToAdd(
-													availableSitesToAddUser?.map( ( site ) => ( {
-														url: site.url,
-														name: site.name,
-														api_key: site.api_key,
-														role: site.role || 'subscriber',
-													} ) ),
+													availableSitesToAddUser?.map(
+														( site ) => ( {
+															url: site.url,
+															name: site.name,
+															api_key:
+																site.api_key,
+															role:
+																site.role ||
+																'subscriber',
+														} )
+													)
 												);
 											}
 										} }
@@ -907,8 +1205,12 @@ const SharedUsers = ( { availableSites } ) => {
 									/>
 									<Button
 										variant="link"
-										onClick={ () => setSelectedSitesToAdd( [] ) }
-										disabled={ selectedSitesToAdd.length === 0 }
+										onClick={ () =>
+											setSelectedSitesToAdd( [] )
+										}
+										disabled={
+											selectedSitesToAdd.length === 0
+										}
 										style={ { marginBlockEnd: '0.5rem' } }
 									>
 										{ __( 'Clear Selection', 'oneaccess' ) }
@@ -925,9 +1227,17 @@ const SharedUsers = ( { availableSites } ) => {
 									} }
 								>
 									<VStack spacing="3">
-										{ getAvailableSitesForUser( selectedUser )?.map( ( site, index ) => {
-											const isSelected = selectedSitesToAdd?.some( ( s ) => s.url === site.url );
-											const selectedSite = selectedSitesToAdd?.find( ( s ) => s.url === site.url );
+										{ getAvailableSitesForUser(
+											selectedUser
+										)?.map( ( site, index ) => {
+											const isSelected =
+												selectedSitesToAdd?.some(
+													( s ) => s.url === site.url
+												);
+											const selectedSite =
+												selectedSitesToAdd?.find(
+													( s ) => s.url === site.url
+												);
 
 											return (
 												<div
@@ -941,10 +1251,24 @@ const SharedUsers = ( { availableSites } ) => {
 													<CheckboxControl
 														label={
 															<div>
-																<div style={ { fontWeight: '500', color: '#23282d' } }>
-																	{ site.name }
+																<div
+																	style={ {
+																		fontWeight:
+																			'500',
+																		color: '#23282d',
+																	} }
+																>
+																	{
+																		site.name
+																	}
 																</div>
-																<div style={ { fontSize: '12px', color: '#6c757d' } }>
+																<div
+																	style={ {
+																		fontSize:
+																			'12px',
+																		color: '#6c757d',
+																	} }
+																>
 																	{ site.url }
 																</div>
 															</div>
@@ -952,40 +1276,84 @@ const SharedUsers = ( { availableSites } ) => {
 														checked={ isSelected }
 														onChange={ () => {
 															if ( isSelected ) {
-																setSelectedSitesToAdd( ( prev ) =>
-																	prev.filter( ( s ) => s.url !== site.url ),
+																setSelectedSitesToAdd(
+																	( prev ) =>
+																		prev.filter(
+																			(
+																				s
+																			) =>
+																				s.url !==
+																				site.url
+																		)
 																);
 															} else {
-																setSelectedSitesToAdd( ( prev ) => [
-																	...prev,
-																	{
-																		url: site.url,
-																		name: site.name,
-																		api_key: site.api_key,
-																		role: 'subscriber',
-																	},
-																] );
+																setSelectedSitesToAdd(
+																	(
+																		prev
+																	) => [
+																		...prev,
+																		{
+																			url: site.url,
+																			name: site.name,
+																			api_key:
+																				site.api_key,
+																			role: 'subscriber',
+																		},
+																	]
+																);
 															}
 														} }
 														__nextHasNoMarginBottom
 													/>
 
 													{ isSelected && (
-														<div style={ { marginTop: '8px', marginLeft: '24px' } }>
+														<div
+															style={ {
+																marginTop:
+																	'8px',
+																marginLeft:
+																	'24px',
+															} }
+														>
 															<SelectControl
-																label={ __( 'Role', 'oneaccess' ) }
-																value={ selectedSite?.role || 'subscriber' }
-																options={ Object.entries( AVAILABLE_ROLES )?.map( ( [ role, label ] ) => ( {
-																	value: role,
-																	label,
-																} ) ) }
-																onChange={ ( value ) => {
-																	setSelectedSitesToAdd( ( prev ) =>
-																		prev?.map( ( s ) =>
-																			s.url === site.url
-																				? { ...s, role: value }
-																				: s,
-																		),
+																label={ __(
+																	'Role',
+																	'oneaccess'
+																) }
+																value={
+																	selectedSite?.role ||
+																	'subscriber'
+																}
+																options={ Object.entries(
+																	AVAILABLE_ROLES
+																)?.map(
+																	( [
+																		role,
+																		label,
+																	] ) => ( {
+																		value: role,
+																		label,
+																	} )
+																) }
+																onChange={ (
+																	value
+																) => {
+																	setSelectedSitesToAdd(
+																		(
+																			prev
+																		) =>
+																			prev?.map(
+																				(
+																					s
+																				) =>
+																					s.url ===
+																					site.url
+																						? {
+																								...s,
+																								role: value,
+																						  }
+																						: s
+																			)
 																	);
 																} }
 																__next40pxDefaultSize
@@ -1002,7 +1370,10 @@ const SharedUsers = ( { availableSites } ) => {
 						) : (
 							<Notice status="warning" isDismissible={ false }>
 								<p style={ { margin: 0 } }>
-									{ __( 'This user is already assigned to all available sites.', 'oneaccess' ) }
+									{ __(
+										'This user is already assigned to all available sites.',
+										'oneaccess'
+									) }
 								</p>
 							</Notice>
 						) }
@@ -1031,7 +1402,13 @@ const SharedUsers = ( { availableSites } ) => {
 							<Button
 								variant="primary"
 								onClick={ handleAddUserToSites }
-								disabled={ selectedSitesToAdd.length === 0 || isAddingToSites || passwordStrength === 'very-weak' || passwordStrength === 'weak' || password === '' }
+								disabled={
+									selectedSitesToAdd.length === 0 ||
+									isAddingToSites ||
+									passwordStrength === 'very-weak' ||
+									passwordStrength === 'weak' ||
+									password === ''
+								}
 								isBusy={ isAddingToSites }
 							>
 								<Icon icon={ plus } />
@@ -1047,14 +1424,27 @@ const SharedUsers = ( { availableSites } ) => {
 				<Modal
 					title={ __( 'Delete User', 'oneaccess' ) }
 					onRequestClose={ () => setShowUserDeletionModal( false ) }
-					shouldCloseOnClickOutside={ true }
+					shouldCloseOnClickOutside
 					size="medium"
 				>
 					<VStack spacing="4">
 						<div>
-							<p style={ { margin: 0, color: '#6c757d', fontSize: '14px' } }>
-								{ __( 'Delete User from selected sites:', 'oneaccess' ) }
-								<strong>{ selectedUser.full_name || selectedUser.username }</strong> ({ selectedUser.email })
+							<p
+								style={ {
+									margin: 0,
+									color: '#6c757d',
+									fontSize: '14px',
+								} }
+							>
+								{ __(
+									'Delete User from selected sites:',
+									'oneaccess'
+								) }
+								<strong>
+									{ selectedUser.full_name ||
+										selectedUser.username }
+								</strong>{ ' ' }
+								({ selectedUser.email })
 							</p>
 						</div>
 
@@ -1062,18 +1452,34 @@ const SharedUsers = ( { availableSites } ) => {
 							<>
 								<HStack justify="flex-start" spacing="3">
 									<CheckboxControl
-										label={ __( 'Select All Sites', 'oneaccess' ) }
-										checked={ selectedSitesToDeleteUser.length === selectedUser?.sites?.length }
+										label={ __(
+											'Select All Sites',
+											'oneaccess'
+										) }
+										checked={
+											selectedSitesToDeleteUser.length ===
+											selectedUser?.sites?.length
+										}
 										onChange={ () => {
-											const availableSitesToDeleteUser = selectedUser?.sites || [];
-											if ( selectedSitesToDeleteUser.length === availableSitesToDeleteUser.length ) {
-												setSelectedSitesToDeleteUser( [] );
+											const availableSitesToDeleteUser =
+												selectedUser?.sites || [];
+											if (
+												selectedSitesToDeleteUser.length ===
+												availableSitesToDeleteUser.length
+											) {
+												setSelectedSitesToDeleteUser(
+													[]
+												);
 											} else {
 												setSelectedSitesToDeleteUser(
-													availableSitesToDeleteUser?.map( ( site ) => ( {
-														site_url: site.site_url,
-														site_name: site.site_name,
-													} ) ),
+													availableSitesToDeleteUser?.map(
+														( site ) => ( {
+															site_url:
+																site.site_url,
+															site_name:
+																site.site_name,
+														} )
+													)
 												);
 											}
 										} }
@@ -1081,8 +1487,13 @@ const SharedUsers = ( { availableSites } ) => {
 									/>
 									<Button
 										variant="link"
-										onClick={ () => setSelectedSitesToDeleteUser( [] ) }
-										disabled={ selectedSitesToDeleteUser.length === 0 }
+										onClick={ () =>
+											setSelectedSitesToDeleteUser( [] )
+										}
+										disabled={
+											selectedSitesToDeleteUser.length ===
+											0
+										}
 										style={ { marginBlockEnd: '0.5rem' } }
 									>
 										{ __( 'Clear Selection', 'oneaccess' ) }
@@ -1099,79 +1510,153 @@ const SharedUsers = ( { availableSites } ) => {
 									} }
 								>
 									<VStack spacing="3">
-										{ selectedUser?.sites?.map( ( site, index ) => {
-											const isSelected = selectedSitesToDeleteUser.some( ( s ) => s.site_url === site.site_url );
-											return (
-												<div
-													key={ index }
-													style={ {
-														padding: '12px',
-														border: '1px solid #f0f0f1',
-														borderRadius: '4px',
-														cursor: 'pointer',
-													} }
-													onClick={ () => {
-														const isSelectedUser = selectedSitesToDeleteUser.some( ( s ) => s.site_url === site.site_url );
-														if ( isSelectedUser ) {
-															setSelectedSitesToDeleteUser( ( prev ) =>
-																prev.filter( ( s ) => s.site_url !== site.site_url ),
-															);
-														} else {
-															setSelectedSitesToDeleteUser( ( prev ) => [
-																...prev,
-																{
-																	site_url: site.site_url,
-																	site_name: site.site_name,
-																},
-															] );
-														}
-													} }
-													role="button"
-													tabIndex={ 0 }
-													onKeyDown={ ( e ) => {
-														if ( e.key === 'Enter' || e.key === ' ' ) {
-															const isSelectedUser = selectedSitesToDeleteUser.some( ( s ) => s.site_url === site.site_url );
-															if ( isSelectedUser ) {
-																setSelectedSitesToDeleteUser( ( prev ) =>
-																	prev.filter( ( s ) => s.site_url !== site.site_url ),
+										{ selectedUser?.sites?.map(
+											( site, index ) => {
+												const isSelected =
+													selectedSitesToDeleteUser.some(
+														( s ) =>
+															s.site_url ===
+															site.site_url
+													);
+												return (
+													<div
+														key={ index }
+														style={ {
+															padding: '12px',
+															border: '1px solid #f0f0f1',
+															borderRadius: '4px',
+															cursor: 'pointer',
+														} }
+														onClick={ () => {
+															const isSelectedUser =
+																selectedSitesToDeleteUser.some(
+																	( s ) =>
+																		s.site_url ===
+																		site.site_url
+																);
+															if (
+																isSelectedUser
+															) {
+																setSelectedSitesToDeleteUser(
+																	( prev ) =>
+																		prev.filter(
+																			(
+																				s
+																			) =>
+																				s.site_url !==
+																				site.site_url
+																		)
 																);
 															} else {
-																setSelectedSitesToDeleteUser( ( prev ) => [
-																	...prev,
-																	{
-																		site_url: site.site_url,
-																		site_name: site.site_name,
-																	},
-																] );
+																setSelectedSitesToDeleteUser(
+																	(
+																		prev
+																	) => [
+																		...prev,
+																		{
+																			site_url:
+																				site.site_url,
+																			site_name:
+																				site.site_name,
+																		},
+																	]
+																);
 															}
-														}
-													} }
-												>
-													<CheckboxControl
-														className="oneaccess-site-checkbox"
-														label={
-															<div>
-																<div style={ { fontWeight: '500', color: '#23282d' } }>
-																	{ site.site_name }
+														} }
+														role="button"
+														tabIndex={ 0 }
+														onKeyDown={ ( e ) => {
+															if (
+																e.key ===
+																	'Enter' ||
+																e.key === ' '
+															) {
+																const isSelectedUser =
+																	selectedSitesToDeleteUser.some(
+																		( s ) =>
+																			s.site_url ===
+																			site.site_url
+																	);
+																if (
+																	isSelectedUser
+																) {
+																	setSelectedSitesToDeleteUser(
+																		(
+																			prev
+																		) =>
+																			prev.filter(
+																				(
+																					s
+																				) =>
+																					s.site_url !==
+																					site.site_url
+																			)
+																	);
+																} else {
+																	setSelectedSitesToDeleteUser(
+																		(
+																			prev
+																		) => [
+																			...prev,
+																			{
+																				site_url:
+																					site.site_url,
+																				site_name:
+																					site.site_name,
+																			},
+																		]
+																	);
+																}
+															}
+														} }
+													>
+														<CheckboxControl
+															className="oneaccess-site-checkbox"
+															label={
+																<div>
+																	<div
+																		style={ {
+																			fontWeight:
+																				'500',
+																			color: '#23282d',
+																		} }
+																	>
+																		{
+																			site.site_name
+																		}
+																	</div>
+																	<div
+																		style={ {
+																			fontSize:
+																				'12px',
+																			color: '#6c757d',
+																		} }
+																	>
+																		{
+																			site.site_url
+																		}
+																	</div>
 																</div>
-																<div style={ { fontSize: '12px', color: '#6c757d' } }>
-																	{ site.site_url }
-																</div>
-															</div>
-														}
-														checked={ isSelected }
-														__nextHasNoMarginBottom
-													/>
-												</div>
-											);
-										} ) }
+															}
+															checked={
+																isSelected
+															}
+															__nextHasNoMarginBottom
+														/>
+													</div>
+												);
+											}
+										) }
 									</VStack>
 								</div>
 							</>
 						) : (
 							<Notice status="warning" isDismissible={ false }>
 								<p style={ { margin: 0 } }>
-									{ __( 'This user cannot be deleted.', 'oneaccess' ) }
+									{ __(
+										'This user cannot be deleted.',
+										'oneaccess'
+									) }
 								</p>
 							</Notice>
 						) }
@@ -1190,7 +1675,10 @@ const SharedUsers = ( { availableSites } ) => {
 								variant="primary"
 								isDestructive
 								onClick={ handleUserDeletionFromSelectedSites }
-								disabled={ selectedSitesToDeleteUser.length === 0 || isDeletingUser }
+								disabled={
+									selectedSitesToDeleteUser.length === 0 ||
+									isDeletingUser
+								}
 								isBusy={ isDeletingUser }
 							>
 								<Icon icon={ trash } />
@@ -1206,12 +1694,15 @@ const SharedUsers = ( { availableSites } ) => {
 				<Modal
 					title={ __( 'Confirm Cleanup', 'oneaccess' ) }
 					onRequestClose={ () => setIsCleanupModalOpen( false ) }
-					shouldCloseOnClickOutside={ true }
+					shouldCloseOnClickOutside
 					size="medium"
 				>
 					<VStack spacing="4">
 						<p style={ { color: '#6c757d', fontSize: '14px' } }>
-							{ __( 'Cleaning up users associated with disconnected sites is an async process that may take some time to complete and cannot be undone. Are you sure you want to proceed?', 'oneaccess' ) }
+							{ __(
+								'Cleaning up users associated with disconnected sites is an async process that may take some time to complete and cannot be undone. Are you sure you want to proceed?',
+								'oneaccess'
+							) }
 						</p>
 						<HStack justify="flex-end" spacing="3">
 							<Button
@@ -1240,19 +1731,27 @@ const SharedUsers = ( { availableSites } ) => {
 			{ /* Rebuild Deduplicated Users Index Modal */ }
 			{ showRebuildIndexModal && (
 				<Modal
-					title={ __( 'Rebuild Deduplicated Users Index', 'oneaccess' ) }
+					title={ __(
+						'Rebuild Deduplicated Users Index',
+						'oneaccess'
+					) }
 					onRequestClose={ () => setShowRebuildIndexModal( false ) }
-					shouldCloseOnClickOutside={ true }
+					shouldCloseOnClickOutside
 					size="medium"
 				>
 					<VStack spacing="4">
 						<p style={ { color: '#6c757d', fontSize: '14px' } }>
-							{ __( 'Rebuilding the deduplicated users index is async process that may take some time to complete depending on the number of users in your network. Are you sure you want to proceed?', 'oneaccess' ) }
+							{ __(
+								'Rebuilding the deduplicated users index is async process that may take some time to complete depending on the number of users in your network. Are you sure you want to proceed?',
+								'oneaccess'
+							) }
 						</p>
 						<HStack justify="flex-end" spacing="3">
 							<Button
 								variant="secondary"
-								onClick={ () => setShowRebuildIndexModal( false ) }
+								onClick={ () =>
+									setShowRebuildIndexModal( false )
+								}
 							>
 								{ __( 'Cancel', 'oneaccess' ) }
 							</Button>
@@ -1276,7 +1775,11 @@ const SharedUsers = ( { availableSites } ) => {
 				<Snackbar
 					isDismissible
 					status={ notice.type }
-					className={ notice.type === 'error' ? 'oneaccess-error-notice' : 'oneaccess-success-notice' }
+					className={
+						notice.type === 'error'
+							? 'oneaccess-error-notice'
+							: 'oneaccess-success-notice'
+					}
 					onRemove={ () => setNotice( { type: '', message: '' } ) }
 				>
 					{ notice.message }
@@ -1286,7 +1789,7 @@ const SharedUsers = ( { availableSites } ) => {
 	);
 };
 
-const PasswordComponent = ( ( {
+const PasswordComponent = ( {
 	password,
 	showPassword,
 	setPassword,
@@ -1305,7 +1808,11 @@ const PasswordComponent = ( ( {
 				autoComplete="username"
 			/>
 			<VStack spacing="2" style={ { gap: '0px' } }>
-				<HStack alignment="left" spacing="2" style={ { alignItems: 'flex-start' } }>
+				<HStack
+					alignment="left"
+					spacing="2"
+					style={ { alignItems: 'flex-start' } }
+				>
 					<TextControl
 						label={ __( 'Password*', 'oneaccess' ) }
 						type={ showPassword ? 'text' : 'password' }
@@ -1316,14 +1823,21 @@ const PasswordComponent = ( ( {
 						} }
 						autoComplete="new-password"
 						required
-						help={ __( 'Password must be at least 8 characters long. Use a mix of letters (upper & lower case), numbers, and special characters for better security.', 'oneaccess' ) }
+						help={ __(
+							'Password must be at least 8 characters long. Use a mix of letters (upper & lower case), numbers, and special characters for better security.',
+							'oneaccess'
+						) }
 						style={ { flex: 1 } }
 						__next40pxDefaultSize
 						__nextHasNoMarginBottom
 					/>
 					<Button
 						onClick={ () => setShowPassword( ! showPassword ) }
-						aria-label={ showPassword ? __( 'Hide password', 'oneaccess' ) : __( 'Show password', 'oneaccess' ) }
+						aria-label={
+							showPassword
+								? __( 'Hide password', 'oneaccess' )
+								: __( 'Show password', 'oneaccess' )
+						}
 						style={ {
 							marginTop: '1.5rem',
 							height: '2.5rem',
@@ -1341,9 +1855,16 @@ const PasswordComponent = ( ( {
 					<div style={ { marginBottom: '12px' } }>
 						<div style={ { fontSize: '12px', color: '#6c757d' } }>
 							{ __( 'Password Strength:', 'oneaccess' ) }{ ' ' }
-							<span style={ { color: getStrengthColor( passwordStrength ), fontWeight: '500' } }>
+							<span
+								style={ {
+									color: getStrengthColor( passwordStrength ),
+									fontWeight: '500',
+								} }
+							>
 								{ passwordStrength
-									? passwordStrength.replace( '-', ' ' ).toUpperCase()
+									? passwordStrength
+											.replace( '-', ' ' )
+											.toUpperCase()
 									: '' }
 							</span>
 						</div>
@@ -1359,8 +1880,11 @@ const PasswordComponent = ( ( {
 							<div
 								style={ {
 									height: '100%',
-									width: strengthWidths[ passwordStrength ] || strengthWidths.default,
-									backgroundColor: getStrengthColor( passwordStrength ),
+									width:
+										strengthWidths[ passwordStrength ] ||
+										strengthWidths.default,
+									backgroundColor:
+										getStrengthColor( passwordStrength ),
 									transition: 'width 0.3s ease-in-out',
 								} }
 							/>
@@ -1379,6 +1903,6 @@ const PasswordComponent = ( ( {
 			</VStack>
 		</form>
 	);
-} );
+};
 
 export default SharedUsers;

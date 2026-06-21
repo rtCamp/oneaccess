@@ -77,11 +77,8 @@ OneAccess solves this by:
 
 | Requirement | Version |
 | :---- | :---- |
-| WordPress | \>= 6.5 |
-| PHP | \>= 7.4 |
-| Tested Up to | \>= 6.8.2 |
-| Stable Tag | 1.0 |
-| Prerequisites | Multiple WordPress installations |
+| WordPress | >= 6.9 |
+| PHP | >= 8.2 |
 
 ## Installation & Setup
 
@@ -186,7 +183,7 @@ OneAccess is actively developed and maintained by [rtCamp](https://rtcamp.com/).
 - **Contributing Guide:** [docs/CONTRIBUTING.md](./docs/CONTRIBUTING.md)
 - **Development Guide:** [docs/DEVELOPMENT.md](./docs/DEVELOPMENT.md)
 
-We welcome contributions\! Please read our contributing guidelines before submitting pull requests.
+We welcome contributions! Please read our contributing guidelines before submitting pull requests.
 
 ### Workflow Overview
 
@@ -265,7 +262,7 @@ Pre-existing users will continue to exist, they will now only be manageable via 
 
 ## License
 
-This project is licensed under the GPL v2 or later \- see the [LICENSE](./LICENSE) file for details.
+This project is licensed under the GPL v2 or later - see the [LICENSE](./LICENSE) file for details.
 
 ---
 

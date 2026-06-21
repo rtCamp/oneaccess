@@ -5,6 +5,8 @@
  * @package OneAccess
  */
 
+declare(strict_types = 1);
+
 namespace OneAccess\Modules\User;
 
 use OneAccess\Contracts\Interfaces\Registrable;
@@ -16,7 +18,6 @@ use OneAccess\Modules\Settings\Settings;
  * Class Profile_Request
  */
 class Profile_Request implements Registrable {
-
 	/**
 	 * {@inheritDoc}
 	 */

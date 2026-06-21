@@ -14,7 +14,6 @@ namespace OneAccess\Modules\Rest;
 use OneAccess\Contracts\Interfaces\Registrable;
 use OneAccess\Modules\Settings\Settings;
 
-
 /**
  * Class - Abstract_REST_Controller
  */
@@ -55,8 +54,6 @@ abstract class Abstract_REST_Controller extends \WP_REST_Controller implements R
 
 	/**
 	 * Permission callback to check if the user has manage_options capability.
-	 *
-	 * @return bool
 	 */
 	public static function permission_callback(): bool {
 		return current_user_can( 'manage_options' );

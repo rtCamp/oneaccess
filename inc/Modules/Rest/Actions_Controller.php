@@ -5,6 +5,8 @@
  * @package OneAccess
  */
 
+declare(strict_types = 1);
+
 namespace OneAccess\Modules\Rest;
 
 use OneAccess\Encryptor;
@@ -17,7 +19,6 @@ use WP_REST_Response;
  * Class Actions_Controller
  */
 class Actions_Controller extends Abstract_REST_Controller {
-
 	/**
 	 * Batch size for user processing
 	 *
@@ -172,8 +173,6 @@ class Actions_Controller extends Abstract_REST_Controller {
 	 * Permission callback to verify request from brand site to governing site.
 	 *
 	 * @param \WP_REST_Request $request Request object.
-	 *
-	 * @return bool
 	 */
 	public static function brand_site_to_governing_site_permission_check( WP_REST_Request $request ): bool {
 		// check X-oneaccess-Token header.
@@ -215,7 +214,6 @@ class Actions_Controller extends Abstract_REST_Controller {
 	 * Validate users array
 	 *
 	 * @param mixed $value The value to validate.
-	 * @return bool
 	 */
 	public function validate_users_array( $value ): bool {
 		if ( ! is_array( $value ) ) {
@@ -273,7 +271,6 @@ class Actions_Controller extends Abstract_REST_Controller {
 	 * Callback to add deduplicated users.
 	 *
 	 * @param \WP_REST_Request $request Request object.
-	 * @return \WP_REST_Response
 	 */
 	public function add_deduplicated_users( WP_REST_Request $request ): WP_REST_Response {
 
@@ -318,8 +315,6 @@ class Actions_Controller extends Abstract_REST_Controller {
 	 * @param \WP_User $user User object.
 	 * @param string   $site_name Site name.
 	 * @param string   $site_url Site URL.
-	 *
-	 * @return array
 	 */
 	private function prepare_user_data( \WP_User $user, string $site_name, string $site_url ): array {
 		return [
@@ -501,8 +496,6 @@ class Actions_Controller extends Abstract_REST_Controller {
 	 * Get users profile request data from all brand sites.
 	 *
 	 * @param \WP_REST_Request $request Request object.
-	 *
-	 * @return \WP_REST_Response
 	 */
 	public function get_profile_requests( WP_REST_Request $request ): WP_REST_Response {
 
@@ -758,7 +751,6 @@ class Actions_Controller extends Abstract_REST_Controller {
 	 * Get brand site profile requests from current site database.
 	 *
 	 * @param \WP_REST_Request $request Request object.
-	 * @return \WP_REST_Response
 	 */
 	public function get_brand_site_profile_requests( WP_REST_Request $request ): WP_REST_Response {
 
@@ -833,8 +825,6 @@ class Actions_Controller extends Abstract_REST_Controller {
 	 * Send single user to governing site for deduplication.
 	 *
 	 * @param int $user_id User ID.
-	 *
-	 * @return void
 	 */
 	public function send_single_user_for_deduplication( int $user_id ): void {
 
@@ -854,8 +844,6 @@ class Actions_Controller extends Abstract_REST_Controller {
 
 	/**
 	 * Cleanup deduplicated users from disconnected sites.
-	 *
-	 * @return \WP_REST_Response
 	 */
 	public function cleanup_deduplicated_users(): WP_REST_Response {
 		global $wpdb;
@@ -991,8 +979,6 @@ class Actions_Controller extends Abstract_REST_Controller {
 
 	/**
 	 * Rebuild deduplicated users index.
-	 *
-	 * @return \WP_REST_Response
 	 */
 	public function rebuild_deduplicated_users_index(): WP_REST_Response {
 
@@ -1058,8 +1044,6 @@ class Actions_Controller extends Abstract_REST_Controller {
 
 	/**
 	 * Rebuild brand sites index on current site.
-	 *
-	 * @return \WP_REST_Response
 	 */
 	public function rebuild_brand_sites_index(): WP_REST_Response {
 
