@@ -5,7 +5,7 @@
  * @package OneAccess\Tests\Integration\Modules\Core
  */
 
-declare(strict_types = 1);
+declare( strict_types = 1 );
 
 namespace OneAccess\Tests\Integration\Modules\Core;
 
