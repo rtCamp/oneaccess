@@ -101,7 +101,7 @@ const OnboardingScreen = () => {
 		setIsSaving( true );
 
 		try {
-			await apiFetch< { oneaccess_site_type?: SiteType } >( {
+			await apiFetch<{ site_type?: SiteType }>( {
 				// @todo replace with wp/v2/settings .
 				path: '/oneaccess/v1/site-type',
 				method: 'POST',
