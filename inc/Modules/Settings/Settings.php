@@ -240,13 +240,11 @@ final class Settings implements Registrable {
 				continue;
 			}
 
-			$decrypted_api_key = ! empty( $brand['api_key'] ) ? Encryptor::decrypt( $brand['api_key'] ) : '';
-
 			// Always use a trailing-slash URL.
 			$url = trailingslashit( $brand['url'] );
 
 			$brands_to_return[ $url ] = [
-				'api_key' => $decrypted_api_key ?: '',
+				'api_key' => $brand['api_key'] ?? '',
 				'id'      => $brand['id'] ?? '',
 				'name'    => $brand['name'] ?? '',
 				'url'     => $url,
