@@ -25,7 +25,7 @@ const NONCE = window.OneAccessSettings.nonce;
 const API_KEY = window.OneAccessSettings.api_key;
 
 const SiteSettings = () => {
-	const [ apiKey, setApiKey ] = useState( '' );
+	const [ apiKey, setApiKey ] = useState( API_KEY );
 	const [ isLoading, setIsLoading ] = useState( false );
 	const [ notice, setNotice ] = useState< NoticeType | null >( null );
 	const [ governingSite, setGoverningSite ] = useState( '' );

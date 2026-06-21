@@ -44,9 +44,9 @@ const SettingsPage = () => {
 	const [ formData, setFormData ] = useState< BrandSite >( defaultBrandSite );
 	const [ notice, setNotice ] = useState< NoticeType | null >( null );
 
-	apiFetch.use( apiFetch.createNonceMiddleware( NONCE ) );
-
 	useEffect( () => {
+		apiFetch.use( apiFetch.createNonceMiddleware( NONCE ) );
+
 		apiFetch< { oneaccess_shared_sites?: BrandSite[] } >( {
 			path: '/wp/v2/settings',
 		} )
