@@ -30,29 +30,65 @@ import {
 	checkPasswordStrength,
 	strengthWidths,
 	getStrengthColor,
+	type StrengthLevel,
 } from '../js/utils';
 
 const NONCE = window.OneAccess.nonce;
 const API_NAMESPACE = window.OneAccess.restUrl + '/oneaccess/v1';
 const API_KEY = window.OneAccess.api_key;
-const AVAILABLE_ROLES = window.OneAccess.availableRoles || [];
+const AVAILABLE_ROLES = window.OneAccess.availableRoles || {};
 
-const CreateUser = ( { availableSites } ) => {
-	const [ userFormData, setUserFormData ] = useState( {
-		username: '',
-		fullName: '',
-		email: '',
-		password: '',
-		role: 'subscriber',
-	} );
+interface UserFormData {
+	username: string;
+	fullName: string;
+	email: string;
+	password: string;
+	role: string;
+}
 
-	const [ notice, setNotice ] = useState( {
-		type: 'success',
-		message: '',
-	} );
-	const [ showPassword, setShowPassword ] = useState( false );
-	const [ passwordStrength, setPasswordStrength ] = useState( '' );
-	const [ userCreationNotices, setUserCreationNotices ] = useState( [] );
+interface CreateUserResult {
+	status: 'success' | 'error';
+	site?: string;
+	message?: string;
+}
+
+const initialFormState: UserFormData = {
+	username: '',
+	fullName: '',
+	email: '',
+	password: '',
+	role: 'subscriber',
+};
+
+const CreateUser = ( {
+	availableSites,
+}: {
+	availableSites: {
+		id?: string;
+		name: string;
+		url: string;
+		api_key: string;
+	}[];
+} ) => {
+	const [ userFormData, setUserFormData ] =
+		useState< UserFormData >( initialFormState );
+
+	const [ notice, setNotice ] = useState< {
+		type: 'success' | 'error';
+		message: string;
+	} | null >( null );
+	const [ showPassword, setShowPassword ] = useState< boolean >( false );
+	const [ passwordStrength, setPasswordStrength ] = useState<
+		StrengthLevel | 'default'
+	>( 'default' );
+	const [ userCreationNotices, setUserCreationNotices ] = useState<
+		Array<
+			Omit< React.ComponentProps< typeof Snackbar >, 'children' > & {
+				id: string;
+				content: string;
+			}
+		>
+	>( [] );
 
 	const fetchStrongPassword = useCallback( async () => {
 		setUserCreationNotices( [] );
@@ -81,7 +117,9 @@ const CreateUser = ( { availableSites } ) => {
 				} );
 				throw new Error( 'Failed to generate password' );
 			}
-			const data = await response.json();
+			const data = ( await response.json() ) as {
+				password?: string;
+			};
 			if ( ! data.password ) {
 				setNotice( {
 					type: 'error',
@@ -111,15 +149,17 @@ const CreateUser = ( { availableSites } ) => {
 
 	// Site selection modal states
 	const [ showSiteSelectionModal, setShowSiteSelectionModal ] =
-		useState( false );
-	const [ selectedSites, setSelectedSites ] = useState( [] );
+		useState< boolean >( false );
+	const [ selectedSites, setSelectedSites ] = useState<
+		Array< { url: string; name: string; api_key: string } >
+	>( [] );
 	const [ isUserCreating, setIsUserCreating ] = useState( false );
 
 	useEffect( () => {
 		setPasswordStrength( checkPasswordStrength( userFormData.password ) );
 	}, [ userFormData.password ] );
 
-	const handleInputChange = ( field, value ) => {
+	const handleInputChange = ( field: keyof UserFormData, value: string ) => {
 		setUserFormData( ( prevData ) => ( {
 			...prevData,
 			[ field ]: value,
@@ -156,7 +196,13 @@ const CreateUser = ( { availableSites } ) => {
 				throw new Error( 'Failed to create user' );
 			}
 
-			const data = await response.json();
+			const data = ( await response.json() ) as {
+				success: boolean;
+				message?: string;
+				data?: {
+					response_data?: CreateUserResult[];
+				};
+			};
 			if ( ! data.success ) {
 				setNotice( {
 					type: 'error',
@@ -171,32 +217,29 @@ const CreateUser = ( { availableSites } ) => {
 			}
 
 			const results = data?.data?.response_data || [];
-			const newNotices = results.map( ( result, index ) => ( {
-				id: `notice-${ Date.now() }-${ index }`,
-				status: result.status === 'success' ? 'success' : 'error',
-				content: result.site
-					? `${ result.site }: ${ result.message }`
-					: result.message ||
-					  __( 'No site information available.', 'oneaccess' ),
-				className:
-					result.status === 'success'
-						? 'oneaccess-success-notice'
-						: 'oneaccess-error-notice',
-			} ) );
-			setNotice( {} );
+			const newNotices = results.map(
+				( result: CreateUserResult, index: number ) => ( {
+					id: `notice-${ Date.now() }-${ index }`,
+					content: result.site
+						? `${ result.site }: ${ result.message }`
+						: result.message ||
+						  __( 'No site information available.', 'oneaccess' ),
+					className:
+						result.status === 'success'
+							? 'oneaccess-success-notice'
+							: 'oneaccess-error-notice',
+				} )
+			);
+			setNotice( null );
 			setUserCreationNotices( newNotices );
 
 			// check if new notices has status as error.
-			const hasError = newNotices.filter( ( n ) => n.status === 'error' );
+			const hasError = results.some(
+				( result: CreateUserResult ) => result.status === 'error'
+			);
 
-			if ( hasError.length === 0 ) {
-				setUserFormData( {
-					username: '',
-					fullName: '',
-					email: '',
-					password: '',
-					role: 'subscriber',
-				} );
+			if ( ! hasError ) {
+				setUserFormData( initialFormState );
 			}
 		} catch {
 			setNotice( {
@@ -247,7 +290,7 @@ const CreateUser = ( { availableSites } ) => {
 							style={ { display: 'none' } }
 							autoComplete="username"
 						/>
-						<Grid columns="2" gap="4">
+						<Grid columns={ 2 } gap={ 4 }>
 							<TextControl
 								label={ __( 'Username*', 'oneaccess' ) }
 								value={ userFormData.username }
@@ -297,12 +340,12 @@ const CreateUser = ( { availableSites } ) => {
 								onChange={ ( value ) =>
 									handleInputChange( 'role', value )
 								}
-								options={ Object.entries(
-									AVAILABLE_ROLES
-								)?.map( ( [ role, label ] ) => ( {
-									value: role,
-									label,
-								} ) ) }
+								options={ Object.entries( AVAILABLE_ROLES ).map(
+									( [ role, label ] ) => ( {
+										value: role,
+										label,
+									} )
+								) }
 								help={ __(
 									'Select the user role that determines their capabilities.',
 									'oneaccess'
@@ -412,7 +455,9 @@ const CreateUser = ( { availableSites } ) => {
 														strengthWidths[
 															passwordStrength
 														] ||
-														strengthWidths.default,
+														strengthWidths[
+															'default'
+														],
 													backgroundColor:
 														getStrengthColor(
 															passwordStrength
@@ -452,18 +497,14 @@ const CreateUser = ( { availableSites } ) => {
 						</Grid>
 					</form>
 
-					{ notice.message && (
+					{ notice && notice.message && (
 						<Snackbar
-							isDismissible
-							status={ notice.type }
 							className={
 								notice.type === 'error'
 									? 'oneaccess-error-notice'
 									: 'oneaccess-success-notice'
 							}
-							onRemove={ () =>
-								setNotice( { type: '', message: '' } )
-							}
+							onRemove={ () => setNotice( null ) }
 						>
 							{ notice.message }
 						</Snackbar>
@@ -527,7 +568,7 @@ const CreateUser = ( { availableSites } ) => {
 											setSelectedSites( [] );
 										} else {
 											setSelectedSites(
-												availableSites?.map(
+												availableSites.map(
 													( site ) => ( {
 														url: site.url,
 														name: site.name,
@@ -562,117 +603,69 @@ const CreateUser = ( { availableSites } ) => {
 									} }
 								>
 									<VStack spacing="2">
-										{ availableSites?.map(
-											( site, index ) => (
-												<div
-													key={ index }
-													style={ {
-														padding: '8px',
-														border: '1px solid #f0f0f1',
-														borderRadius: '4px',
-														cursor: 'pointer',
-													} }
-													role="button"
-													tabIndex={ 0 }
-													onKeyDown={ ( e ) => {
-														if (
-															e.key === 'Enter' ||
-															e.key === ' '
-														) {
-															e.preventDefault();
-															setSelectedSites(
-																( prev ) =>
-																	prev.some(
+										{ availableSites.map(
+											( site, index ) => {
+												const toggleSite = () => {
+													setSelectedSites(
+														( prev ) =>
+															prev.some(
+																( s ) =>
+																	s.url ===
+																	site.url
+															)
+																? prev.filter(
 																		( s ) =>
-																			s.url ===
+																			s.url !==
 																			site.url
-																	)
-																		? prev.filter(
-																				(
-																					s
-																				) =>
-																					s.url !==
-																					site.url
-																		  )
-																		: [
-																				...prev,
-																				{
-																					url: site.url,
-																					name: site.name,
-																					api_key:
-																						site.api_key,
-																				},
-																		  ]
-															);
-														}
-													} }
-													aria-pressed={ selectedSites.some(
-														( s ) =>
-															s.url === site.url
-													) }
-													onClick={ ( event ) => {
-														event.stopPropagation();
-														setSelectedSites(
-															( prev ) =>
-																prev.some(
-																	( s ) =>
-																		s.url ===
-																		site.url
-																)
-																	? prev.filter(
-																			(
-																				s
-																			) =>
-																				s.url !==
-																				site.url
-																	  )
-																	: [
-																			...prev,
-																			{
-																				url: site.url,
-																				name: site.name,
-																				api_key:
-																					site.api_key,
-																			},
-																	  ]
-														);
-													} }
-												>
-													<CheckboxControl
-														className="oneaccess-site-checkbox"
-														label={
-															<div>
-																<div
-																	style={ {
-																		fontWeight:
-																			'500',
-																		color: '#23282d',
-																	} }
-																>
-																	{
-																		site.name
-																	}
-																</div>
-																<div
-																	style={ {
-																		fontSize:
-																			'12px',
-																		color: '#6c757d',
-																	} }
-																>
-																	{ site.url }
-																</div>
-															</div>
-														}
-														checked={ selectedSites.some(
-															( s ) =>
-																s.url ===
-																site.url
-														) }
-														__nextHasNoMarginBottom
-													/>
-												</div>
-											)
+																  )
+																: [
+																		...prev,
+																		{
+																			url: site.url,
+																			name: site.name,
+																			api_key:
+																				site.api_key,
+																		},
+																  ]
+													);
+												};
+												return (
+													<div
+														key={ index }
+														style={ {
+															padding: '8px',
+															border: '1px solid #f0f0f1',
+															borderRadius: '4px',
+															cursor: 'pointer',
+														} }
+													>
+														<CheckboxControl
+															className="oneaccess-site-checkbox"
+															label={ site.name }
+															checked={ selectedSites.some(
+																( s ) =>
+																	s.url ===
+																	site.url
+															) }
+															onChange={
+																toggleSite
+															}
+															__nextHasNoMarginBottom
+														/>
+														<div
+															style={ {
+																fontSize:
+																	'12px',
+																color: '#6c757d',
+																marginTop:
+																	'2px',
+															} }
+														>
+															{ site.url }
+														</div>
+													</div>
+												);
+											}
 										) }
 									</VStack>
 								</div>

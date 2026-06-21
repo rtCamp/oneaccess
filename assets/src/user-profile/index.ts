@@ -19,7 +19,7 @@ const fieldsToDisable = [
 	'url',
 ];
 
-const UserProfileRequest = window.OneAccessProfile || {};
+const UserProfileRequest = window.OneAccessProfile;
 
 document.addEventListener(
 	'DOMContentLoaded',
@@ -27,14 +27,15 @@ document.addEventListener(
 		if ( UserProfileRequest?.request?.status !== 'pending' ) {
 			return;
 		}
-		fieldsToDisable.forEach( function ( field ) {
-			const input = document.querySelector( '#' + field );
+		fieldsToDisable.forEach( ( field ) => {
+			const input = document.querySelector< HTMLInputElement >(
+				'#' + field
+			);
 			if ( input ) {
 				input.disabled = true;
 			}
 		} );
-		// JavaScript
-		const submitBtn = document.querySelector(
+		const submitBtn = document.querySelector< HTMLInputElement >(
 			'input[type="submit"][name="submit"][id="submit"]'
 		);
 		if ( submitBtn ) {

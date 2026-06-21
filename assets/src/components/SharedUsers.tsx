@@ -26,6 +26,7 @@ import {
 } from '@wordpress/components';
 import { moreVertical, people, plus, globe, trash } from '@wordpress/icons';
 import { decodeEntities } from '@wordpress/html-entities';
+import type { MutableRefObject } from 'react';
 
 /**
  * Internal dependencies
@@ -34,52 +35,127 @@ import {
 	checkPasswordStrength,
 	strengthWidths,
 	getStrengthColor,
+	type StrengthLevel,
 } from '../js/utils';
 
 const NONCE = window.OneAccess.nonce;
 const API_NAMESPACE = window.OneAccess.restUrl + '/oneaccess/v1';
-const AVAILABLE_ROLES = window.OneAccess.availableRoles || [];
+const AVAILABLE_ROLES = window.OneAccess.availableRoles || {};
 const PER_PAGE = 20;
 
-const SharedUsers = ( { availableSites } ) => {
-	const [ isLoading, setIsLoading ] = useState( false );
-	const [ notice, setNotice ] = useState( {
-		type: '',
-		message: '',
-	} );
-	const [ users, setUsers ] = useState( [] );
-	const [ searchTerm, setSearchTerm ] = useState( '' );
+interface AvailableSite {
+	id?: string;
+	name: string;
+	url: string;
+	api_key: string;
+}
+
+interface NoticeState {
+	type: 'success' | 'error';
+	message: string;
+}
+
+interface SharedUser {
+	id: number;
+	username: string;
+	email: string;
+	full_name: string;
+	first_name: string;
+	last_name: string;
+	sites: Array< {
+		site_url: string;
+		site_name: string;
+		name: string;
+		url: string;
+		role: string;
+		roles: string[] | Record< string, string >;
+		user_id: number;
+	} >;
+	sites_info: Array< {
+		site_url: string;
+		site_name: string;
+		roles: string[] | Record< string, string >;
+		user_id: number;
+	} >;
+	all_roles: string[];
+	all_sites: string[];
+	created_at: string;
+	updated_at: string;
+}
+
+interface SiteToAdd {
+	url: string;
+	name: string;
+	api_key: string;
+	role?: string;
+}
+
+interface SiteToDelete {
+	site_url: string;
+	site_name: string;
+}
+
+interface GenericApiResponse {
+	success: boolean;
+	message?: string;
+}
+
+const SharedUsers = ( {
+	availableSites,
+}: {
+	availableSites: AvailableSite[];
+} ) => {
+	const [ isLoading, setIsLoading ] = useState< boolean >( false );
+	const [ notice, setNotice ] = useState< NoticeState | null >( null );
+	const [ users, setUsers ] = useState< SharedUser[] >( [] );
+	const [ searchTerm, setSearchTerm ] = useState< string >( '' );
 	const [ debounceSearchTerm, setDebounceSearchTerm ] =
-		useState( searchTerm );
-	const [ selectedSiteFilter, setSelectedSiteFilter ] = useState( '' );
-	const [ selectedUserRole, setSelectedUserRole ] = useState( '' );
-	const [ page, setPage ] = useState( 1 );
-	const [ totalPages, setTotalPages ] = useState( 1 );
-	const [ isDoingUsersCleanup, setIsDoingUsersCleanup ] = useState( false );
-	const [ isCleanupModalOpen, setIsCleanupModalOpen ] = useState( false );
+		useState< string >( searchTerm );
+	const [ selectedSiteFilter, setSelectedSiteFilter ] =
+		useState< string >( '' );
+	const [ selectedUserRole, setSelectedUserRole ] = useState< string >( '' );
+	const [ page, setPage ] = useState< number >( 1 );
+	const [ totalPages, setTotalPages ] = useState< number >( 1 );
+	const [ isDoingUsersCleanup, setIsDoingUsersCleanup ] =
+		useState< boolean >( false );
+	const [ isCleanupModalOpen, setIsCleanupModalOpen ] =
+		useState< boolean >( false );
 	const [ isRebuildingDeduplicatedIndex, setIsRebuildingDeduplicatedIndex ] =
-		useState( false );
+		useState< boolean >( false );
 	const [ showRebuildIndexModal, setShowRebuildIndexModal ] =
-		useState( false );
-	const [ password, setPassword ] = useState( '' );
-	const [ showPassword, setShowPassword ] = useState( false );
-	const [ passwordStrength, setPasswordStrength ] = useState( '' );
-	const [ passwordNotice, setPasswordNotice ] = useState( null );
-	const passwordRef = useRef( password );
+		useState< boolean >( false );
+	const [ password, setPassword ] = useState< string >( '' );
+	const [ showPassword, setShowPassword ] = useState< boolean >( false );
+	const [ passwordStrength, setPasswordStrength ] = useState<
+		StrengthLevel | 'default'
+	>( 'default' );
+	const [ passwordNotice, setPasswordNotice ] =
+		useState< NoticeState | null >( null );
+	const passwordRef: MutableRefObject< string > = useRef( password );
 
 	// Modal states
-	const [ showManageRolesModal, setShowManageRolesModal ] = useState( false );
-	const [ showAddToSitesModal, setShowAddToSitesModal ] = useState( false );
-	const [ selectedUser, setSelectedUser ] = useState( null );
-	const [ userRoles, setUserRoles ] = useState( {} );
-	const [ selectedSitesToAdd, setSelectedSitesToAdd ] = useState( [] );
-	const [ isUpdatingRoles, setIsUpdatingRoles ] = useState( false );
-	const [ isAddingToSites, setIsAddingToSites ] = useState( false );
+	const [ showManageRolesModal, setShowManageRolesModal ] =
+		useState< boolean >( false );
+	const [ showAddToSitesModal, setShowAddToSitesModal ] =
+		useState< boolean >( false );
+	const [ selectedUser, setSelectedUser ] = useState< SharedUser | null >(
+		null
+	);
+	const [ userRoles, setUserRoles ] = useState< Record< string, string > >(
+		{}
+	);
+	const [ selectedSitesToAdd, setSelectedSitesToAdd ] = useState<
+		SiteToAdd[]
+	>( [] );
+	const [ isUpdatingRoles, setIsUpdatingRoles ] =
+		useState< boolean >( false );
+	const [ isAddingToSites, setIsAddingToSites ] =
+		useState< boolean >( false );
 	const [ showUserDeletionModal, setShowUserDeletionModal ] =
-		useState( false );
+		useState< boolean >( false );
 	const [ selectedSitesToDeleteUser, setSelectedSitesToDeleteUser ] =
-		useState( [] );
-	const [ isDeletingUser, setIsDeletingUser ] = useState( false );
+		useState< SiteToDelete[] >( [] );
+	const [ isDeletingUser, setIsDeletingUser ] = useState< boolean >( false );
 
 	// debounce search query to improve performance.
 	useEffect( () => {
@@ -127,62 +203,87 @@ const SharedUsers = ( { availableSites } ) => {
 				throw new Error( 'Failed to fetch users' );
 			}
 
-			const data = await response.json();
+			const data = ( await response.json() ) as {
+				success: boolean;
+				message?: string;
+				users: Array< {
+					id: number;
+					email: string;
+					full_name?: string;
+					first_name: string;
+					last_name: string;
+					sites_info?: Array< {
+						site_url: string;
+						site_name: string;
+						roles: string[] | Record< string, string >;
+						user_id: number;
+					} >;
+					all_roles?: string[];
+					all_sites?: string[];
+					created_at: string;
+					updated_at: string;
+				} >;
+				pagination: {
+					total_pages: number;
+				};
+			};
 
 			if ( ! data.success ) {
 				throw new Error( data.message || 'Failed to fetch users' );
 			}
 
 			// Transform the API response to match component's expected format
-			const transformedUsers = data.users.map( ( user ) => ( {
-				id: user.id,
-				username: user.email.split( '@' )[ 0 ], // Fallback username from email
-				email: user.email,
-				full_name:
-					user.full_name ||
-					`${ user.first_name } ${ user.last_name }`.trim() ||
-					user.email,
-				first_name: user.first_name,
-				last_name: user.last_name,
-				sites:
-					user.sites_info?.map( ( site ) => ( {
-						site_url: site.site_url,
-						site_name: site.site_name,
-						name: site.site_name,
-						url: site.site_url,
-						// Get the first role from roles array, or handle object structure
-						role: ( () => {
-							if ( Array.isArray( site.roles ) ) {
-								// return all roles as comma separated string and convert to available roles mapping.
-								return site?.roles
-									?.map(
-										( role ) =>
-											AVAILABLE_ROLES[ role ] || role
-									)
-									.join( ', ' );
-							}
-							if (
-								typeof site.roles === 'object' &&
-								site.roles !== null
-							) {
-								return Object.values( site.roles )
-									?.map(
-										( role ) =>
-											AVAILABLE_ROLES[ role ] || role
-									)
-									.join( ', ' );
-							}
-							return 'subscriber';
-						} )(),
-						roles: site.roles,
-						user_id: site.user_id,
-					} ) ) || [],
-				sites_info: user.sites_info,
-				all_roles: user.all_roles || [],
-				all_sites: user.all_sites || [],
-				created_at: user.created_at,
-				updated_at: user.updated_at,
-			} ) );
+			const transformedUsers: SharedUser[] = data.users.map(
+				( user ) => ( {
+					id: user.id,
+					username: user.email.split( '@' )[ 0 ] ?? '', // Fallback username from email
+					email: user.email,
+					full_name:
+						user.full_name ||
+						`${ user.first_name } ${ user.last_name }`.trim() ||
+						user.email,
+					first_name: user.first_name,
+					last_name: user.last_name,
+					sites:
+						user.sites_info?.map( ( site ) => ( {
+							site_url: site.site_url,
+							site_name: site.site_name,
+							name: site.site_name,
+							url: site.site_url,
+							// Get the first role from roles array, or handle object structure
+							role: ( (): string => {
+								if ( Array.isArray( site.roles ) ) {
+									// return all roles as comma separated string and convert to available roles mapping.
+									return site.roles
+										.map(
+											( role ) =>
+												AVAILABLE_ROLES[ role ] || role
+										)
+										.join( ', ' );
+								}
+								if (
+									typeof site.roles === 'object' &&
+									site.roles !== null
+								) {
+									return Object.values( site.roles )
+										.map(
+											( role ) =>
+												AVAILABLE_ROLES[ role ] || role
+										)
+										.join( ', ' );
+								}
+								return 'subscriber';
+							} )(),
+							roles: site.roles,
+							user_id: site.user_id,
+						} ) ) || [],
+					sites_info: user.sites_info || [],
+					all_roles: user.all_roles || [],
+					all_sites: user.all_sites || [],
+					created_at: user.created_at,
+					updated_at: user.updated_at,
+				} )
+			);
 
 			setUsers( transformedUsers );
 			setTotalPages( data.pagination.total_pages );
@@ -211,8 +312,8 @@ const SharedUsers = ( { availableSites } ) => {
 	}, [ searchTerm, selectedUserRole, selectedSiteFilter ] ); // eslint-disable-line react-hooks/exhaustive-deps
 
 	// Get sites available for adding (sites user is not already assigned to)
-	const getAvailableSitesForUser = ( user ) => {
-		const userSiteUrls =
+	const getAvailableSitesForUser = ( user: SharedUser ): AvailableSite[] => {
+		const userSiteUrls: string[] =
 			user.sites?.map( ( site ) => {
 				const url = site.url || site.site_url || '';
 				return url.replace( /\/+$/, '' );
@@ -224,18 +325,19 @@ const SharedUsers = ( { availableSites } ) => {
 	};
 
 	// Handle opening manage roles modal
-	const handleManageRoles = ( user ) => {
+	const handleManageRoles = ( user: SharedUser ) => {
 		setSelectedUser( user );
 
 		// Initialize user roles with current roles
-		const initialRoles = {};
+		const initialRoles: Record< string, string > = {};
 		user.sites?.forEach( ( site ) => {
+			const rolesArray = Array.isArray( site.roles ) ? site.roles : [];
 			initialRoles[ site.site_url ] =
-				site.roles?.length > 0
-					? site.roles?.[ 0 ]
+				rolesArray.length > 0
+					? rolesArray[ 0 ] ?? ''
 					: Object.keys( AVAILABLE_ROLES ).find(
 							( key ) => AVAILABLE_ROLES[ key ] === site.role
-					  ) || '';
+					  ) ?? '';
 		} );
 
 		setUserRoles( initialRoles );
@@ -243,7 +345,7 @@ const SharedUsers = ( { availableSites } ) => {
 	};
 
 	// Handle opening add to sites modal
-	const handleAddToSites = ( user ) => {
+	const handleAddToSites = ( user: SharedUser ) => {
 		setSelectedUser( user );
 		setSelectedSitesToAdd( [] );
 		setShowAddToSitesModal( true );
@@ -251,13 +353,16 @@ const SharedUsers = ( { availableSites } ) => {
 		setPassword( '' );
 	};
 
-	const handleUserDeletion = ( user ) => {
+	const handleUserDeletion = ( user: SharedUser ) => {
 		setSelectedUser( user );
 		setSelectedSitesToDeleteUser( [] );
 		setShowUserDeletionModal( true );
 	};
 
 	const handleUserDeletionFromSelectedSites = useCallback( async () => {
+		if ( ! selectedUser ) {
+			return;
+		}
 		setIsDeletingUser( true );
 		try {
 			const currentUser = selectedUser;
@@ -283,7 +388,7 @@ const SharedUsers = ( { availableSites } ) => {
 				throw new Error( 'Failed to delete user from sites' );
 			}
 
-			const data = await response.json();
+			const data = ( await response.json() ) as GenericApiResponse;
 			if ( ! data.success ) {
 				throw new Error(
 					data.message || 'Failed to delete user from sites'
@@ -312,6 +417,9 @@ const SharedUsers = ( { availableSites } ) => {
 
 	// Handle updating user roles
 	const handleUpdateRoles = useCallback( async () => {
+		if ( ! selectedUser ) {
+			return;
+		}
 		setIsUpdatingRoles( true );
 		try {
 			const response = await fetch(
@@ -334,7 +442,7 @@ const SharedUsers = ( { availableSites } ) => {
 				throw new Error( 'Failed to update roles' );
 			}
 
-			const data = await response.json();
+			const data = ( await response.json() ) as GenericApiResponse;
 			if ( ! data.success ) {
 				throw new Error( data.message || 'Failed to update roles' );
 			}
@@ -362,6 +470,9 @@ const SharedUsers = ( { availableSites } ) => {
 
 	// Handle adding user to sites
 	const handleAddUserToSites = useCallback( async () => {
+		if ( ! selectedUser ) {
+			return;
+		}
 		setIsAddingToSites( true );
 		try {
 			const response = await fetch(
@@ -386,7 +497,7 @@ const SharedUsers = ( { availableSites } ) => {
 				throw new Error( 'Failed to add user to sites' );
 			}
 
-			const data = await response.json();
+			const data = ( await response.json() ) as GenericApiResponse;
 			if ( ! data.success ) {
 				throw new Error(
 					data.message || 'Failed to add user to sites'
@@ -394,7 +505,7 @@ const SharedUsers = ( { availableSites } ) => {
 			}
 
 			const siteNames = selectedSitesToAdd
-				?.map( ( site ) => site.name )
+				.map( ( site ) => site.name )
 				.join( ', ' );
 			setNotice( {
 				type: 'success',
@@ -421,12 +532,12 @@ const SharedUsers = ( { availableSites } ) => {
 	}, [ selectedSitesToAdd, fetchUsers, selectedUser, password ] );
 
 	// Handle page change
-	const handlePageChange = ( newPage ) => {
+	const handlePageChange = ( newPage: number ) => {
 		setPage( newPage );
 	};
 
 	// Get role label from role value
-	const getRoleLabel = ( roleValue ) => {
+	const getRoleLabel = ( roleValue: string ): string => {
 		return (
 			AVAILABLE_ROLES[ roleValue ] ||
 			( roleValue ?? __( 'No Role', 'oneaccess' ) )
@@ -457,7 +568,7 @@ const SharedUsers = ( { availableSites } ) => {
 				} );
 			}
 
-			const data = await response.json();
+			const data = ( await response.json() ) as GenericApiResponse;
 
 			if ( ! data.success ) {
 				setNotice( {
@@ -517,7 +628,7 @@ const SharedUsers = ( { availableSites } ) => {
 				} );
 			}
 
-			const data = await response.json();
+			const data = ( await response.json() ) as GenericApiResponse;
 
 			if ( ! data.success ) {
 				setNotice( {
@@ -577,7 +688,9 @@ const SharedUsers = ( { availableSites } ) => {
 				} );
 				throw new Error( 'Failed to generate password' );
 			}
-			const data = await response.json();
+			const data = ( await response.json() ) as {
+				password?: string;
+			};
 			if ( ! data.password ) {
 				setPasswordNotice( {
 					type: 'error',
@@ -586,7 +699,7 @@ const SharedUsers = ( { availableSites } ) => {
 						'oneaccess'
 					),
 				} );
-				return '';
+				return;
 			}
 			setPasswordNotice( {
 				type: 'success',
@@ -601,7 +714,6 @@ const SharedUsers = ( { availableSites } ) => {
 					'oneaccess'
 				),
 			} );
-			return '';
 		}
 	}, [] );
 
@@ -610,22 +722,34 @@ const SharedUsers = ( { availableSites } ) => {
 		setPasswordStrength( strength );
 	}, [ password ] );
 
-	const isUserRoleChanged = () => {
-		return selectedUser?.sites?.some( ( site ) => {
-			// Get the current role key stored in state
-			const currentRoleInState = userRoles[ site.site_url ];
+	const isUserRoleChanged = (): boolean => {
+		return Boolean(
+			selectedUser?.sites?.some( ( site ) => {
+				// Get the current role key stored in state
+				const currentRoleInState = userRoles[ site.site_url ];
 
-			// Get the original role key from the user data
-			const originalRole =
-				site.roles?.length > 0
-					? site.roles[ 0 ]
-					: Object.keys( AVAILABLE_ROLES ).find(
-							( key ) => AVAILABLE_ROLES[ key ] === site.role
-					  ) || 'subscriber';
+				// Get the original role key from the user data
+				const rolesArray = Array.isArray( site.roles )
+					? site.roles
+					: [];
+				const originalRole =
+					rolesArray.length > 0
+						? rolesArray[ 0 ] ?? ''
+						: Object.keys( AVAILABLE_ROLES ).find(
+								( key ) => AVAILABLE_ROLES[ key ] === site.role
+						  ) ?? 'subscriber';
 
-			return currentRoleInState !== originalRole;
-		} );
+				return currentRoleInState !== originalRole;
+			} )
+		);
 	};
+
+	const roleOptions: Array< { label: string; value: string } > =
+		Object.entries( AVAILABLE_ROLES ).map( ( [ role, label ] ) => ( {
+			label,
+			value: role,
+		} ) );
+
 	return (
 		<>
 			<Card>
@@ -664,8 +788,8 @@ const SharedUsers = ( { availableSites } ) => {
 				</CardHeader>
 				<CardBody>
 					<Grid
-						columns="4"
-						gap="4"
+						columns={ 4 }
+						gap={ 4 }
 						style={ { alignItems: 'flex-end' } }
 					>
 						<TextControl
@@ -687,7 +811,7 @@ const SharedUsers = ( { availableSites } ) => {
 									label: __( 'All Sites', 'oneaccess' ),
 									value: '',
 								},
-								...availableSites?.map( ( site ) => ( {
+								...availableSites.map( ( site ) => ( {
 									label: site.name,
 									value: site.url,
 								} ) ),
@@ -704,12 +828,7 @@ const SharedUsers = ( { availableSites } ) => {
 									label: __( 'All Roles', 'oneaccess' ),
 									value: '',
 								},
-								...Object.entries( AVAILABLE_ROLES )?.map(
-									( [ role, label ] ) => ( {
-										label,
-										value: role,
-									} )
-								),
+								...roleOptions,
 							] }
 							onChange={ setSelectedUserRole }
 							__next40pxDefaultSize
@@ -733,7 +852,7 @@ const SharedUsers = ( { availableSites } ) => {
 							{ isLoading ? (
 								<tr>
 									<td
-										colSpan="4"
+										colSpan={ 4 }
 										style={ {
 											textAlign: 'center',
 											padding: '32px',
@@ -753,7 +872,7 @@ const SharedUsers = ( { availableSites } ) => {
 							{ ! isLoading && users.length === 0 && (
 								<tr>
 									<td
-										colSpan="4"
+										colSpan={ 4 }
 										style={ {
 											textAlign: 'center',
 											padding: '32px',
@@ -775,7 +894,7 @@ const SharedUsers = ( { availableSites } ) => {
 							) }
 
 							{ ! isLoading &&
-								users?.map( ( user, index ) => (
+								users.map( ( user, index ) => (
 									<tr key={ `${ user.id }-${ index }` }>
 										<td>
 											<strong>
@@ -797,7 +916,7 @@ const SharedUsers = ( { availableSites } ) => {
 												} }
 											>
 												{ user.sites?.length > 0 ? (
-													user.sites?.map(
+													user.sites.map(
 														( site, siteIndex ) => (
 															<span
 																key={ `${ site.site_url }-${ siteIndex }` }
@@ -862,7 +981,11 @@ const SharedUsers = ( { availableSites } ) => {
 													position: 'bottom left',
 												} }
 											>
-												{ ( { onClose } ) => (
+												{ ( {
+													onClose,
+												}: {
+													onClose: () => void;
+												} ) => (
 													<>
 														<MenuGroup>
 															<MenuItem
@@ -956,13 +1079,19 @@ const SharedUsers = ( { availableSites } ) => {
 								{ __( 'Previous', 'oneaccess' ) }
 							</Button>
 							<div
-								style={ { color: '#6c757d', fontSize: '14px' } }
+								style={ {
+									color: '#6c757d',
+									fontSize: '14px',
+								} }
 							>
 								{ sprintf(
 									/* translators: 1: Current page number. 2: Total pages. */
 									__( 'Page %1$s of %2$s', 'oneaccess' ),
-									page,
-									totalPages === 0 ? 1 : totalPages
+									page.toString(),
+									( totalPages === 0
+										? 1
+										: totalPages
+									).toString()
 								) }
 							</div>
 							<Button
@@ -999,7 +1128,7 @@ const SharedUsers = ( { availableSites } ) => {
 									{ selectedUser.full_name ||
 										selectedUser.username }
 								</strong>{ ' ' }
-								({ selectedUser.email })
+								( { selectedUser.email } )
 							</p>
 						</div>
 
@@ -1045,16 +1174,7 @@ const SharedUsers = ( { availableSites } ) => {
 												userRoles[ site.site_url ] ||
 												'subscriber'
 											}
-											options={ [
-												...Object.entries(
-													AVAILABLE_ROLES
-												)?.map(
-													( [ role, label ] ) => ( {
-														value: role,
-														label,
-													} )
-												),
-											] }
+											options={ roleOptions }
 											onChange={ ( value ) => {
 												setUserRoles( ( prev ) => ( {
 													...prev,
@@ -1083,7 +1203,7 @@ const SharedUsers = ( { availableSites } ) => {
 								onClick={ handleUpdateRoles }
 								disabled={
 									isUpdatingRoles ||
-									userRoles.length === 0 ||
+									Object.keys( userRoles ).length === 0 ||
 									! isUserRoleChanged()
 								}
 								isBusy={ isUpdatingRoles }
@@ -1143,7 +1263,7 @@ const SharedUsers = ( { availableSites } ) => {
 									{ selectedUser.full_name ||
 										selectedUser.username }
 								</strong>{ ' ' }
-								({ selectedUser.email })
+								( { selectedUser.email } )
 							</p>
 							<p
 								style={ {
@@ -1187,14 +1307,14 @@ const SharedUsers = ( { availableSites } ) => {
 												setSelectedSitesToAdd( [] );
 											} else {
 												setSelectedSitesToAdd(
-													availableSitesToAddUser?.map(
+													availableSitesToAddUser.map(
 														( site ) => ( {
 															url: site.url,
 															name: site.name,
 															api_key:
 																site.api_key,
 															role:
-																site.role ||
+																site.api_key &&
 																'subscriber',
 														} )
 													)
@@ -1211,7 +1331,9 @@ const SharedUsers = ( { availableSites } ) => {
 										disabled={
 											selectedSitesToAdd.length === 0
 										}
-										style={ { marginBlockEnd: '0.5rem' } }
+										style={ {
+											marginBlockEnd: '0.5rem',
+										} }
 									>
 										{ __( 'Clear Selection', 'oneaccess' ) }
 									</Button>
@@ -1229,15 +1351,36 @@ const SharedUsers = ( { availableSites } ) => {
 									<VStack spacing="3">
 										{ getAvailableSitesForUser(
 											selectedUser
-										)?.map( ( site, index ) => {
+										).map( ( site, index ) => {
 											const isSelected =
-												selectedSitesToAdd?.some(
+												selectedSitesToAdd.some(
 													( s ) => s.url === site.url
 												);
 											const selectedSite =
-												selectedSitesToAdd?.find(
+												selectedSitesToAdd.find(
 													( s ) => s.url === site.url
 												);
+
+											const toggleSite =
+												(): SiteToAdd[] => {
+													if ( isSelected ) {
+														return selectedSitesToAdd.filter(
+															( s ) =>
+																s.url !==
+																site.url
+														);
+													}
+													return [
+														...selectedSitesToAdd,
+														{
+															url: site.url,
+															name: site.name,
+															api_key:
+																site.api_key,
+															role: 'subscriber',
+														},
+													];
+												};
 
 											return (
 												<div
@@ -1249,62 +1392,27 @@ const SharedUsers = ( { availableSites } ) => {
 													} }
 												>
 													<CheckboxControl
-														label={
-															<div>
-																<div
-																	style={ {
-																		fontWeight:
-																			'500',
-																		color: '#23282d',
-																	} }
-																>
-																	{
-																		site.name
-																	}
-																</div>
-																<div
-																	style={ {
-																		fontSize:
-																			'12px',
-																		color: '#6c757d',
-																	} }
-																>
-																	{ site.url }
-																</div>
-															</div>
-														}
+														label={ site.name }
 														checked={ isSelected }
-														onChange={ () => {
-															if ( isSelected ) {
-																setSelectedSitesToAdd(
-																	( prev ) =>
-																		prev.filter(
-																			(
-																				s
-																			) =>
-																				s.url !==
-																				site.url
-																		)
-																);
-															} else {
-																setSelectedSitesToAdd(
-																	(
-																		prev
-																	) => [
-																		...prev,
-																		{
-																			url: site.url,
-																			name: site.name,
-																			api_key:
-																				site.api_key,
-																			role: 'subscriber',
-																		},
-																	]
-																);
-															}
-														} }
+														onChange={ () =>
+															setSelectedSitesToAdd(
+																toggleSite
+															)
+														}
 														__nextHasNoMarginBottom
 													/>
+													<div
+														style={ {
+															fontSize: '12px',
+															color: '#6c757d',
+															marginBottom:
+																isSelected
+																	? '8px'
+																	: '0',
+														} }
+													>
+														{ site.url }
+													</div>
 
 													{ isSelected && (
 														<div
@@ -1324,17 +1432,9 @@ const SharedUsers = ( { availableSites } ) => {
 																	selectedSite?.role ||
 																	'subscriber'
 																}
-																options={ Object.entries(
-																	AVAILABLE_ROLES
-																)?.map(
-																	( [
-																		role,
-																		label,
-																	] ) => ( {
-																		value: role,
-																		label,
-																	} )
-																) }
+																options={
+																	roleOptions
+																}
 																onChange={ (
 																	value
 																) => {
@@ -1342,7 +1442,7 @@ const SharedUsers = ( { availableSites } ) => {
 																		(
 																			prev
 																		) =>
-																			prev?.map(
+																			prev.map(
 																				(
 																					s
 																				) =>
@@ -1444,7 +1544,7 @@ const SharedUsers = ( { availableSites } ) => {
 									{ selectedUser.full_name ||
 										selectedUser.username }
 								</strong>{ ' ' }
-								({ selectedUser.email })
+								( { selectedUser.email } )
 							</p>
 						</div>
 
@@ -1472,7 +1572,7 @@ const SharedUsers = ( { availableSites } ) => {
 												);
 											} else {
 												setSelectedSitesToDeleteUser(
-													availableSitesToDeleteUser?.map(
+													availableSitesToDeleteUser.map(
 														( site ) => ( {
 															site_url:
 																site.site_url,
@@ -1494,7 +1594,9 @@ const SharedUsers = ( { availableSites } ) => {
 											selectedSitesToDeleteUser.length ===
 											0
 										}
-										style={ { marginBlockEnd: '0.5rem' } }
+										style={ {
+											marginBlockEnd: '0.5rem',
+										} }
 									>
 										{ __( 'Clear Selection', 'oneaccess' ) }
 									</Button>
@@ -1518,6 +1620,25 @@ const SharedUsers = ( { availableSites } ) => {
 															s.site_url ===
 															site.site_url
 													);
+												const toggleSite =
+													(): SiteToDelete[] => {
+														if ( isSelected ) {
+															return selectedSitesToDeleteUser.filter(
+																( s ) =>
+																	s.site_url !==
+																	site.site_url
+															);
+														}
+														return [
+															...selectedSitesToDeleteUser,
+															{
+																site_url:
+																	site.site_url,
+																site_name:
+																	site.site_name,
+															},
+														];
+													};
 												return (
 													<div
 														key={ index }
@@ -1525,124 +1646,34 @@ const SharedUsers = ( { availableSites } ) => {
 															padding: '12px',
 															border: '1px solid #f0f0f1',
 															borderRadius: '4px',
-															cursor: 'pointer',
-														} }
-														onClick={ () => {
-															const isSelectedUser =
-																selectedSitesToDeleteUser.some(
-																	( s ) =>
-																		s.site_url ===
-																		site.site_url
-																);
-															if (
-																isSelectedUser
-															) {
-																setSelectedSitesToDeleteUser(
-																	( prev ) =>
-																		prev.filter(
-																			(
-																				s
-																			) =>
-																				s.site_url !==
-																				site.site_url
-																		)
-																);
-															} else {
-																setSelectedSitesToDeleteUser(
-																	(
-																		prev
-																	) => [
-																		...prev,
-																		{
-																			site_url:
-																				site.site_url,
-																			site_name:
-																				site.site_name,
-																		},
-																	]
-																);
-															}
-														} }
-														role="button"
-														tabIndex={ 0 }
-														onKeyDown={ ( e ) => {
-															if (
-																e.key ===
-																	'Enter' ||
-																e.key === ' '
-															) {
-																const isSelectedUser =
-																	selectedSitesToDeleteUser.some(
-																		( s ) =>
-																			s.site_url ===
-																			site.site_url
-																	);
-																if (
-																	isSelectedUser
-																) {
-																	setSelectedSitesToDeleteUser(
-																		(
-																			prev
-																		) =>
-																			prev.filter(
-																				(
-																					s
-																				) =>
-																					s.site_url !==
-																					site.site_url
-																			)
-																	);
-																} else {
-																	setSelectedSitesToDeleteUser(
-																		(
-																			prev
-																		) => [
-																			...prev,
-																			{
-																				site_url:
-																					site.site_url,
-																				site_name:
-																					site.site_name,
-																			},
-																		]
-																	);
-																}
-															}
 														} }
 													>
 														<CheckboxControl
 															className="oneaccess-site-checkbox"
 															label={
-																<div>
-																	<div
-																		style={ {
-																			fontWeight:
-																				'500',
-																			color: '#23282d',
-																		} }
-																	>
-																		{
-																			site.site_name
-																		}
-																	</div>
-																	<div
-																		style={ {
-																			fontSize:
-																				'12px',
-																			color: '#6c757d',
-																		} }
-																	>
-																		{
-																			site.site_url
-																		}
-																	</div>
-																</div>
+																site.site_name
 															}
 															checked={
 																isSelected
 															}
+															onChange={ () =>
+																setSelectedSitesToDeleteUser(
+																	toggleSite
+																)
+															}
 															__nextHasNoMarginBottom
 														/>
+														<div
+															style={ {
+																fontSize:
+																	'12px',
+																color: '#6c757d',
+																marginTop:
+																	'2px',
+															} }
+														>
+															{ site.site_url }
+														</div>
 													</div>
 												);
 											}
@@ -1771,16 +1802,14 @@ const SharedUsers = ( { availableSites } ) => {
 			) }
 
 			{ /* Notice Snackbar */ }
-			{ notice.message && (
+			{ notice && notice.message && (
 				<Snackbar
-					isDismissible
-					status={ notice.type }
 					className={
 						notice.type === 'error'
 							? 'oneaccess-error-notice'
 							: 'oneaccess-success-notice'
 					}
-					onRemove={ () => setNotice( { type: '', message: '' } ) }
+					onRemove={ () => setNotice( null ) }
 				>
 					{ notice.message }
 				</Snackbar>
@@ -1797,6 +1826,14 @@ const PasswordComponent = ( {
 	setShowPassword,
 	passwordStrength,
 	fetchStrongPassword,
+}: {
+	password: string;
+	showPassword: boolean;
+	setPassword: ( value: string ) => void;
+	passwordRef: MutableRefObject< string >;
+	setShowPassword: ( value: boolean ) => void;
+	passwordStrength: StrengthLevel | 'default';
+	fetchStrongPassword: () => Promise< void >;
 } ) => {
 	return (
 		<form>
@@ -1882,7 +1919,7 @@ const PasswordComponent = ( {
 									height: '100%',
 									width:
 										strengthWidths[ passwordStrength ] ||
-										strengthWidths.default,
+										strengthWidths[ 'default' ],
 									backgroundColor:
 										getStrengthColor( passwordStrength ),
 									transition: 'width 0.3s ease-in-out',
@@ -1896,7 +1933,10 @@ const PasswordComponent = ( {
 					onClick={ () => {
 						fetchStrongPassword();
 					} }
-					style={ { width: 'fit-content', marginBlockStart: '12px' } }
+					style={ {
+						width: 'fit-content',
+						marginBlockStart: '12px',
+					} }
 				>
 					{ __( 'Generate strong password', 'oneaccess' ) }
 				</Button>

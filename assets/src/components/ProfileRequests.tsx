@@ -24,26 +24,71 @@ const API_NAMESPACE = window.OneAccess.restUrl + '/oneaccess/v1';
 const API_KEY = window.OneAccess.api_key;
 const PER_PAGE = 20;
 
-const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
-	const [ isLoading, setIsLoading ] = useState( false );
-	const [ notice, setNotice ] = useState( {
-		type: '',
-		message: '',
-	} );
-	const [ searchTerm, setSearchTerm ] = useState( '' );
-	const [ selectedSiteFilter, setSelectedSiteFilter ] = useState( '' );
-	const [ requestStatusFilter, setRequestStatusFilter ] = useState( '' );
-	const [ allSitesProfileRequests, setAllSitesProfileRequests ] = useState(
-		[]
-	);
-	const [ isViewModalOpen, setIsViewModalOpen ] = useState( false );
-	const [ isRejectModalOpen, setIsRejectModalOpen ] = useState( false );
-	const [ selectedRequest, setSelectedRequest ] = useState( null );
-	const [ rejectionComment, setRejectionComment ] = useState( '' );
-	const [ isProcessing, setIsProcessing ] = useState( false );
-	const [ page, setPage ] = useState( 1 );
-	const [ totalPages, setTotalPages ] = useState( 1 );
-	const [ hasMore, setHasMore ] = useState( false );
+type RequestStatus = 'pending' | 'approved' | 'rejected';
+
+interface ChangeEntry {
+	old?: string;
+	new?: string;
+}
+
+interface ProfileRequest {
+	id: number;
+	user_id: number;
+	user_name: string;
+	user_email: string;
+	user_login: string;
+	requested_by: string;
+	requested_at: string;
+	status: RequestStatus;
+	site_name: string;
+	metadata: Record< string, ChangeEntry >;
+	data: Record< string, ChangeEntry >;
+	rejection_comment: string;
+	created_at: string;
+	updated_at: string;
+}
+
+interface SelectOption {
+	label: string;
+	value: string;
+}
+
+const ProfileRequests = ( {
+	setProfileRequestsCount,
+	availableSites,
+}: {
+	setProfileRequestsCount: ( count: number ) => void;
+	availableSites: {
+		id?: string;
+		name: string;
+		url: string;
+		api_key: string;
+	}[];
+} ) => {
+	const [ isLoading, setIsLoading ] = useState< boolean >( false );
+	const [ notice, setNotice ] = useState< {
+		type: 'success' | 'error';
+		message: string;
+	} | null >( null );
+	const [ searchTerm, setSearchTerm ] = useState< string >( '' );
+	const [ selectedSiteFilter, setSelectedSiteFilter ] =
+		useState< string >( '' );
+	const [ requestStatusFilter, setRequestStatusFilter ] =
+		useState< string >( '' );
+	const [ allSitesProfileRequests, setAllSitesProfileRequests ] = useState<
+		ProfileRequest[]
+	>( [] );
+	const [ isViewModalOpen, setIsViewModalOpen ] =
+		useState< boolean >( false );
+	const [ isRejectModalOpen, setIsRejectModalOpen ] =
+		useState< boolean >( false );
+	const [ selectedRequest, setSelectedRequest ] =
+		useState< ProfileRequest | null >( null );
+	const [ rejectionComment, setRejectionComment ] = useState< string >( '' );
+	const [ isProcessing, setIsProcessing ] = useState< boolean >( false );
+	const [ page, setPage ] = useState< number >( 1 );
+	const [ totalPages, setTotalPages ] = useState< number >( 1 );
+	const [ hasMore, setHasMore ] = useState< boolean >( false );
 
 	const fetchProfileRequests = useCallback(
 		async ( cursor = 0 ) => {
@@ -87,32 +132,56 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 					throw new Error( 'Failed to fetch profile requests' );
 				}
 
-				const data = await response.json();
+				const data = ( await response.json() ) as {
+					profile_requests?: Array< {
+						id: number;
+						user_id: number;
+						status: RequestStatus;
+						site_name?: string;
+						comment?: string;
+						created_at: string;
+						updated_at: string;
+						request_data?: {
+							user_name?: string;
+							user_email?: string;
+							user_login?: string;
+							requested_by?: string;
+							requested_at?: string;
+							metadata?: Record< string, ChangeEntry >;
+							data?: Record< string, ChangeEntry >;
+						};
+					} >;
+					total_pending_count?: number;
+					pagination?: {
+						has_more?: boolean;
+						total_pages?: number;
+					};
+				};
 
 				// Transform the data to match the component structure
-				const transformedRequests = ( data.profile_requests || [] ).map(
-					( request ) => {
-						const requestData = request.request_data || {};
+				const transformedRequests: ProfileRequest[] = (
+					data.profile_requests || []
+				).map( ( request ) => {
+					const requestData = request.request_data || {};
 
-						return {
-							id: request.id,
-							user_id: request.user_id,
-							user_name: requestData.user_name || '',
-							user_email: requestData.user_email || '',
-							user_login: requestData.user_login || '',
-							requested_by: requestData.requested_by || '',
-							requested_at:
-								requestData.requested_at || request.created_at,
-							status: request.status,
-							site_name: request.site_name || '',
-							metadata: requestData.metadata || {},
-							data: requestData.data || {},
-							rejection_comment: request.comment || '',
-							created_at: request.created_at,
-							updated_at: request.updated_at,
-						};
-					}
-				);
+					return {
+						id: request.id,
+						user_id: request.user_id,
+						user_name: requestData.user_name || '',
+						user_email: requestData.user_email || '',
+						user_login: requestData.user_login || '',
+						requested_by: requestData.requested_by || '',
+						requested_at:
+							requestData.requested_at || request.created_at,
+						status: request.status,
+						site_name: request.site_name || '',
+						metadata: requestData.metadata || {},
+						data: requestData.data || {},
+						rejection_comment: request.comment || '',
+						created_at: request.created_at,
+						updated_at: request.updated_at,
+					};
+				} );
 
 				setAllSitesProfileRequests( transformedRequests );
 
@@ -144,7 +213,7 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 		]
 	);
 
-	const handleAcceptRequest = async ( request ) => {
+	const handleAcceptRequest = async ( request: ProfileRequest ) => {
 		setIsProcessing( true );
 		try {
 			const response = await fetch(
@@ -195,6 +264,9 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 	};
 
 	const handleRejectRequest = useCallback( async () => {
+		if ( ! selectedRequest ) {
+			return;
+		}
 		if ( ! rejectionComment.trim() ) {
 			setNotice( {
 				type: 'error',
@@ -251,7 +323,7 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 		}
 	}, [ rejectionComment, selectedRequest, fetchProfileRequests ] );
 
-	const openViewModal = ( request ) => {
+	const openViewModal = ( request: ProfileRequest ) => {
 		setSelectedRequest( request );
 		setIsViewModalOpen( true );
 	};
@@ -267,8 +339,13 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 		setRejectionComment( '' );
 	};
 
-	const renderChangesTable = ( request ) => {
-		const changes = [];
+	const renderChangesTable = ( request: ProfileRequest ) => {
+		const changes: Array< {
+			field: string;
+			oldValue: string;
+			newValue: string;
+			type: 'data' | 'metadata';
+		} > = [];
 
 		// Add data changes (user fields like display_name, first_name, etc.)
 		if (
@@ -333,7 +410,7 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 				<tbody>
 					{ changes.length === 0 ? (
 						<tr>
-							<td colSpan="3" style={ { textAlign: 'center' } }>
+							<td colSpan={ 3 } style={ { textAlign: 'center' } }>
 								{ __( 'No changes found.', 'oneaccess' ) }
 							</td>
 						</tr>
@@ -372,7 +449,7 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 	};
 
 	// Get unique site names for filter dropdown (from API, ensure iterable)
-	const siteOptions = [
+	const siteOptions: SelectOption[] = [
 		{ label: __( 'All Sites', 'oneaccess' ), value: '' },
 		...( Array.isArray( availableSites ) ? availableSites : [] ).map(
 			( site ) => ( {
@@ -383,19 +460,21 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 	];
 
 	// Request status filter options
-	const statusOptions = [
+	const statusOptions: SelectOption[] = [
 		{ label: __( 'All Status', 'oneaccess' ), value: '' },
 		{ label: __( 'Pending', 'oneaccess' ), value: 'pending' },
 		{ label: __( 'Rejected', 'oneaccess' ), value: 'rejected' },
 		{ label: __( 'Approved', 'oneaccess' ), value: 'approved' },
 	];
 
-	const getStatusLabel = ( value ) => {
+	const getStatusLabel = ( value: string ) => {
 		const option = statusOptions.find( ( opt ) => opt.value === value );
 		return option ? option.label : value;
 	};
 
-	const getStatusColor = ( status ) => {
+	const getStatusColor = (
+		status: string
+	): { backgroundColor: string; color: string } => {
 		switch ( status ) {
 			case 'pending':
 				return { backgroundColor: '#ffc107', color: '#000' };
@@ -418,13 +497,18 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 		setPage( 1 );
 		setHasMore( false );
 		fetchProfileRequests( 0 );
-	}, [ selectedSiteFilter, requestStatusFilter, searchTerm ] ); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [
+		selectedSiteFilter,
+		requestStatusFilter,
+		searchTerm,
+		fetchProfileRequests,
+	] );
 
 	// No client-side filtering/pagination needed - results come pre-paginated/filtered from API
 	const displayedRequests = allSitesProfileRequests;
 
 	// Handle page change
-	const handlePageChange = ( newPage ) => {
+	const handlePageChange = ( newPage: number ) => {
 		setPage( newPage );
 		const newCursor = ( newPage - 1 ) * PER_PAGE;
 		fetchProfileRequests( newCursor );
@@ -438,8 +522,8 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 				</CardHeader>
 				<CardBody>
 					<Grid
-						columns="4"
-						gap="4"
+						columns={ 4 }
+						gap={ 4 }
 						style={ { alignItems: 'flex-end' } }
 					>
 						<TextControl
@@ -489,7 +573,7 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 							{ isLoading && (
 								<tr>
 									<td
-										colSpan="7"
+										colSpan={ 7 }
 										style={ {
 											textAlign: 'center',
 											padding: '20px',
@@ -502,7 +586,7 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 							{ ! isLoading && displayedRequests.length === 0 && (
 								<tr>
 									<td
-										colSpan="7"
+										colSpan={ 7 }
 										style={ { textAlign: 'center' } }
 									>
 										{ __(
@@ -787,16 +871,14 @@ const ProfileRequests = ( { setProfileRequestsCount, availableSites } ) => {
 				</Modal>
 			) }
 
-			{ notice.message && (
+			{ notice && notice.message && (
 				<Snackbar
-					isDismissible
-					status={ notice.type }
 					className={
 						notice.type === 'error'
 							? 'oneaccess-error-notice'
 							: 'oneaccess-success-notice'
 					}
-					onRemove={ () => setNotice( { type: '', message: '' } ) }
+					onRemove={ () => setNotice( null ) }
 				>
 					{ notice.message }
 				</Snackbar>

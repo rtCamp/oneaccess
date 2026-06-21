@@ -57,15 +57,13 @@ const styles = {
 const scripts = {
 	...sharedConfig,
 	entry: {
-		main: path.resolve( process.cwd(), 'assets', 'src', 'js', 'main.js' ),
 		'user-profile': path.resolve(
 			process.cwd(),
 			'assets',
 			'src',
 			'user-profile',
-			'index.js'
+			'index.ts'
 		),
-		admin: path.resolve( process.cwd(), 'assets', 'src', 'js', 'admin.js' ),
 		settings: path.resolve(
 			process.cwd(),
 			'assets',
@@ -86,7 +84,7 @@ const scripts = {
 			'assets',
 			'src',
 			'admin/manage-users',
-			'index.js'
+			'index.tsx'
 		),
 	},
 	module: {

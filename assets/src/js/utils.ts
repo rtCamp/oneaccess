@@ -1,3 +1,5 @@
+export type StrengthLevel = 'very-weak' | 'weak' | 'medium' | 'strong';
+
 /**
  * Validates if a given string is a valid URL.
  *
@@ -30,12 +32,10 @@ export const isValidEmail = ( email: string ): boolean => {
  * Checks the strength of a given password.
  *
  * @param {string} password - The password to check.
- *
- * @return {string} The strength of the password: 'very-weak', 'weak', 'medium', or 'strong'.
  */
 
-export const checkPasswordStrength = ( password: string ): string => {
-	let strength = 'weak';
+export const checkPasswordStrength = ( password: string ): StrengthLevel => {
+	let strength: StrengthLevel = 'weak';
 	if (
 		password.length >= 12 &&
 		/[A-Z]/.test( password ) &&
@@ -60,10 +60,8 @@ export const checkPasswordStrength = ( password: string ): string => {
 
 /**
  * Mapping of password strength levels to their corresponding width percentages.
- *
- * @return {Object} An object mapping password strength levels to width percentages.
  */
-export const strengthWidths = {
+export const strengthWidths: Record< StrengthLevel | 'default', string > = {
 	'very-weak': '25%',
 	weak: '50%',
 	medium: '75%',
@@ -74,11 +72,13 @@ export const strengthWidths = {
 /**
  * Gets the color associated with a given password strength.
  *
- * @param {string} passwordStrength - The strength of the password.
+ * @param {StrengthLevel | 'default'} passwordStrength - The strength of the password.
  *
  * @return {string} The color code associated with the password strength.
  */
-export const getStrengthColor = ( passwordStrength: string ): string => {
+export const getStrengthColor = (
+	passwordStrength: StrengthLevel | 'default'
+): string => {
 	switch ( passwordStrength ) {
 		case 'very-weak':
 			return '#dc3545';

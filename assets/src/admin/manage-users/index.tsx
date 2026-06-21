@@ -11,6 +11,7 @@ import { Icon, plus, pencil, people } from '@wordpress/icons';
 import { decodeEntities } from '@wordpress/html-entities';
 import { __ } from '@wordpress/i18n';
 import { Spinner, Snackbar } from '@wordpress/components';
+import type { ReactElement, ReactNode } from 'react';
 
 /**
  * Internal dependencies
@@ -23,14 +24,17 @@ const NONCE = window.OneAccess.nonce;
 const API_NAMESPACE = window.OneAccess.restUrl + '/oneaccess/v1';
 const availableSites = window.OneAccess.availableSites || [];
 
+interface NoticeState {
+	type: 'success' | 'error';
+	message: string;
+}
+
 const TabPanel = () => {
-	const [ activeTab, setActiveTab ] = useState( 'users' );
-	const [ isLoading, setIsLoading ] = useState( false );
-	const [ profileRequestsCount, setProfileRequestsCount ] = useState( 0 );
-	const [ notice, setNotice ] = useState( {
-		type: '',
-		message: '',
-	} );
+	const [ activeTab, setActiveTab ] = useState< string >( 'users' );
+	const [ isLoading, setIsLoading ] = useState< boolean >( false );
+	const [ profileRequestsCount, setProfileRequestsCount ] =
+		useState< number >( 0 );
+	const [ notice, setNotice ] = useState< NoticeState | null >( null );
 
 	const fetchProfileRequestsCount = useCallback( async () => {
 		setIsLoading( true );
@@ -51,7 +55,9 @@ const TabPanel = () => {
 			if ( ! response.ok ) {
 				throw new Error( 'Failed to fetch profile requests count' );
 			}
-			const data = await response.json();
+			const data = ( await response.json() ) as {
+				total_pending_count?: number;
+			};
 			setProfileRequestsCount( data?.total_pending_count || 0 );
 		} catch {
 			setNotice( {
@@ -96,7 +102,7 @@ const TabPanel = () => {
 	}, [] ); /* eslint-disable-line react-hooks/exhaustive-deps */
 
 	// Update URL when activeTab changes
-	const handleTabChange = ( tabName ) => {
+	const handleTabChange = ( tabName: string ) => {
 		setActiveTab( tabName );
 		const params = new URLSearchParams( window.location.search );
 		params.set( 'tab', tabName );
@@ -107,7 +113,12 @@ const TabPanel = () => {
 		);
 	};
 
-	const tabs = [
+	const tabs: Array< {
+		name: string;
+		title: string;
+		icon: ReactElement;
+		content: ReactNode;
+	} > = [
 		{
 			name: 'users',
 			title: 'Users',
@@ -186,16 +197,14 @@ const TabPanel = () => {
 					{ tabs.find( ( tab ) => tab.name === activeTab )?.content }
 				</div>
 			</div>
-			{ notice.message && (
+			{ notice?.message && (
 				<Snackbar
-					isDismissible
-					status={ notice.type }
 					className={
 						notice.type === 'error'
 							? 'oneaccess-error-notice'
 							: 'oneaccess-success-notice'
 					}
-					onRemove={ () => setNotice( { type: '', message: '' } ) }
+					onRemove={ () => setNotice( null ) }
 				>
 					{ notice.message }
 				</Snackbar>
