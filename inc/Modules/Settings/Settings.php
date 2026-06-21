@@ -299,41 +299,6 @@ final class Settings implements Registrable {
 	}
 
 	/**
-	 * Set the shared sites.
-	 *
-	 * @param array<string,array<string,mixed>> $sites The sites to set.
-	 *
-	 * @phpstan-param array<string,array{
-	 *   api_key?: string,
-	 *   id?: string,
-	 *   name?: string,
-	 *   url?: string,
-	 *   is_editable?: bool
-	 * }> $sites The sites to set.
-	 */
-	public static function set_shared_sites( array $sites ): bool {
-		foreach ( $sites as &$site ) {
-			if ( empty( $site['api_key'] ) || empty( $site['url'] ) ) {
-				continue;
-			}
-			// Ensure URLs are trailing-slashed.
-			$site['url'] = trailingslashit( $site['url'] );
-
-			// Encrypt API keys before saving.
-			$encrypted_key = Encryptor::encrypt( $site['api_key'] );
-
-			// Bail if encryption fails.
-			if ( false === $encrypted_key ) {
-				return false;
-			}
-
-			$site['api_key'] = $encrypted_key;
-		}
-
-		return update_option( self::OPTION_GOVERNING_SHARED_SITES, array_values( $sites ), false );
-	}
-
-	/**
 	 * Get the current site type.
 	 */
 	public static function get_site_type(): ?string {
