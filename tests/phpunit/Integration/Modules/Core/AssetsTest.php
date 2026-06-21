@@ -61,7 +61,7 @@ final class AssetsTest extends TestCase {
 		$assets = new Assets();
 		$tag    = '<script defer src="https://example.com/script.js"></script>';
 
-		$this->assertSame( $tag, $assets->defer_scripts( $tag, Assets::SEARCH_SCRIPT_HANDLE ) );
+		$this->assertSame( $tag, $assets->defer_scripts( $tag, Assets::SETTINGS_SCRIPT_HANDLE ) );
 	}
 
 	/**

@@ -69,7 +69,7 @@ final class Assets implements Registrable {
 			self::$localized_data = [
 				'nonce'    => wp_create_nonce( 'wp_rest' ),
 				'api_key'  => Settings::get_api_key(),
-				'restUrl'  => esc_url( home_url( '/wp-json/' ) ),
+			'restUrl'  => esc_url( home_url( '/wp-json' ) ),
 				'setupUrl' => esc_url( admin_url( 'admin.php?page=oneaccess-settings' ) ),
 				'siteType' => Settings::get_site_type(),
 			];
