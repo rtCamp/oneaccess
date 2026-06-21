@@ -26,14 +26,10 @@ parameters:
 		- uninstall.php
 		- inc/
 	scanDirectories:
-			- vendor/woocommerce/action-scheduler
+		- vendor/woocommerce/action-scheduler
 	excludePaths:
 		analyse:
 			- tests/
 			- vendor/
 		analyseAndScan:
 			- node_modules (?)
-
-	ignoreErrors:
-		- # Too noisy for now.
-			identifier: missingType.iterableValue

@@ -1,12 +1,11 @@
 <?php
-
-declare(strict_types = 1);
-
 /**
  * Hooks related to governing site & brand sites.
  *
  * @package OneAccess
  */
+
+declare(strict_types = 1);
 
 namespace OneAccess\Modules\Core;
 

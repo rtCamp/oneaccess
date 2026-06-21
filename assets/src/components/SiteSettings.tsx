@@ -25,12 +25,12 @@ const NONCE = window.OneAccessSettings.nonce;
 const API_KEY = window.OneAccessSettings.api_key;
 
 const SiteSettings = () => {
-	const [ apiKey, setApiKey ] = useState< string >( '' );
-	const [ isLoading, setIsLoading ] = useState< boolean >( false );
+	const [ apiKey, setApiKey ] = useState( '' );
+	const [ isLoading, setIsLoading ] = useState( false );
 	const [ notice, setNotice ] = useState< NoticeType | null >( null );
-	const [ governingSite, setGoverningSite ] = useState< string >( '' );
-	const [ showDisconectionModal, setShowDisconectionModal ] =
-		useState< boolean >( false );
+	const [ governingSite, setGoverningSite ] = useState( '' );
+	const [ showDisconnectionModal, setShowDisconnectionModal ] =
+		useState( false );
 
 	const fetchApiKey = useCallback( async () => {
 		setIsLoading( true );
@@ -48,11 +48,11 @@ const SiteSettings = () => {
 			}
 			const data = await response.json();
 			setApiKey( data?.secret_key || '' );
-		} catch ( error ) {
+		} catch {
 			setNotice( {
 				type: 'error',
 				message: __(
-					'Failed to fetch api key. Please try again later.',
+					'Failed to fetch API key. Please try again later.',
 					'oneaccess'
 				),
 			} );
@@ -88,16 +88,16 @@ const SiteSettings = () => {
 				setNotice( {
 					type: 'error',
 					message: __(
-						'Failed to regenerate api key. Please try again later.',
+						'Failed to regenerate API key. Please try again later.',
 						'oneaccess'
 					),
 				} );
 			}
-		} catch ( error ) {
+		} catch {
 			setNotice( {
 				type: 'error',
 				message: __(
-					'Error regenerating api key. Please try again later.',
+					'Error regenerating API key. Please try again later.',
 					'oneaccess'
 				),
 			} );
@@ -123,7 +123,7 @@ const SiteSettings = () => {
 			}
 			const data = await response.json();
 			setGoverningSite( data?.governing_site_url || '' );
-		} catch ( error ) {
+		} catch {
 			setNotice( {
 				type: 'error',
 				message: __(
@@ -157,7 +157,7 @@ const SiteSettings = () => {
 					'oneaccess'
 				),
 			} );
-		} catch ( error ) {
+		} catch {
 			setNotice( {
 				type: 'error',
 				message: __(
@@ -166,18 +166,18 @@ const SiteSettings = () => {
 				),
 			} );
 		} finally {
-			setShowDisconectionModal( false );
+			setShowDisconnectionModal( false );
 		}
 	}, [ apiKey ] );
 
 	const handleDisconnectGoverningSite = useCallback( async () => {
-		setShowDisconectionModal( true );
+		setShowDisconnectionModal( true );
 	}, [] );
 
 	useEffect( () => {
 		fetchApiKey();
 		fetchCurrentGoverningSite();
-	}, [] ); // eslint-disable-line react-hooks/exhaustive-deps
+	}, [ fetchApiKey, fetchCurrentGoverningSite ] );
 
 	if ( isLoading ) {
 		return <Spinner />;
@@ -291,10 +291,10 @@ const SiteSettings = () => {
 				</CardBody>
 			</Card>
 
-			{ showDisconectionModal && (
+			{ showDisconnectionModal && (
 				<Modal
 					title={ __( 'Disconnect Governing Site', 'oneaccess' ) }
-					onRequestClose={ () => setShowDisconectionModal( false ) }
+					onRequestClose={ () => setShowDisconnectionModal( false ) }
 					shouldCloseOnClickOutside
 				>
 					<p>
@@ -313,7 +313,7 @@ const SiteSettings = () => {
 					>
 						<Button
 							variant="secondary"
-							onClick={ () => setShowDisconectionModal( false ) }
+							onClick={ () => setShowDisconnectionModal( false ) }
 						>
 							{ __( 'Cancel', 'oneaccess' ) }
 						</Button>

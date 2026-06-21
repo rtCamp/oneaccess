@@ -232,9 +232,9 @@ class Actions_Controller extends Abstract_REST_Controller {
 	/**
 	 * Sanitize user data
 	 *
-	 * @param array $user Raw user data.
+	 * @param array<string, mixed> $user Raw user data.
 	 *
-	 * @return array|null Sanitized user data or null if invalid.
+	 * @return array<string, mixed>|null Sanitized user data or null if invalid.
 	 */
 	private function sanitize_user_data( array $user ): ?array {
 
@@ -315,6 +315,8 @@ class Actions_Controller extends Abstract_REST_Controller {
 	 * @param \WP_User $user User object.
 	 * @param string   $site_name Site name.
 	 * @param string   $site_url Site URL.
+	 *
+	 * @return array<string, mixed> Prepared user data.
 	 */
 	private function prepare_user_data( \WP_User $user, string $site_name, string $site_url ): array {
 		return [
@@ -331,10 +333,10 @@ class Actions_Controller extends Abstract_REST_Controller {
 	/**
 	 * Send batch of users to governing site
 	 *
-	 * @param array  $users_batch Users to send.
-	 * @param string $governing_site_url Governing site URL.
+	 * @param array<int, array<string, mixed>> $users_batch Users to send.
+	 * @param string                           $governing_site_url Governing site URL.
 	 *
-	 * @return array|\WP_Error Response or error.
+	 * @return array<string, mixed>|\WP_Error Response or error.
 	 */
 	private function send_users_batch( array $users_batch, string $governing_site_url ): array|\WP_Error {
 		$body = wp_json_encode( [ 'users' => $users_batch ] );
@@ -442,11 +444,11 @@ class Actions_Controller extends Abstract_REST_Controller {
 	/**
 	 * Make remote request to brand site
 	 *
-	 * @param string $site_url Site URL.
-	 * @param string $api_key API key.
-	 * @param array  $query_params Query parameters.
+	 * @param string               $site_url Site URL.
+	 * @param string               $api_key API key.
+	 * @param array<string, mixed> $query_params Query parameters.
 	 *
-	 * @return array|\WP_Error Response data or error.
+	 * @return array<string, mixed>|\WP_Error Response data or error.
 	 */
 	private function make_brand_site_request( string $site_url, string $api_key, array $query_params ) {
 
@@ -722,7 +724,7 @@ class Actions_Controller extends Abstract_REST_Controller {
 	 *
 	 * @param string $status Status filter.
 	 * @param string $search_query Search query.
-	 * @return array Array with 'sql' and 'params' keys.
+	 * @return array{sql: string, params: array<int, string>} Array with 'sql' and 'params' keys.
 	 */
 	private function build_profile_requests_where_clause( string $status, string $search_query ): array {
 
@@ -856,20 +858,13 @@ class Actions_Controller extends Abstract_REST_Controller {
 
 		// Build list of connected site URLs.
 		foreach ( $oneaccess_sites as $site_config ) {
-
-			// Skip duplicate or invalid sites.
-			if ( empty( $site_config['url'] ) || in_array( $site_config['url'], $processed_sites, true ) ) {
-				if ( ! empty( $site_config['url'] ) ) {
-					$processed_sites[] = $site_config['url'];
-				}
+			// Skip invalid site configs.
+			if ( empty( $site_config['url'] ) || isset( $processed_sites[ $site_config['url'] ] ) ) {
 				continue;
 			}
 
-			if ( empty( $site_config['url'] ) ) {
-				continue;
-			}
-
-			$connected_site_urls[] = trailingslashit( esc_url_raw( $site_config['url'] ) );
+			$processed_sites[ $site_config['url'] ] = true;
+			$connected_site_urls[]                  = trailingslashit( esc_url_raw( $site_config['url'] ) );
 		}
 
 		// If no connected sites, we can't proceed safely.

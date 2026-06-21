@@ -1,12 +1,11 @@
 <?php
-
-declare(strict_types = 1);
-
 /**
  * User Roles module.
  *
  * @package OneAccess
  */
+
+declare(strict_types = 1);
 
 namespace OneAccess\Modules\Core;
 
@@ -43,9 +42,9 @@ class User_Roles implements Registrable {
 	/**
 	 * Modify user capabilities based on the site type.
 	 *
-	 * @param array $allcaps All capabilities for the user.
+	 * @param array<string, bool|mixed> $allcaps All capabilities for the user.
 	 *
-	 * @return array Modified capabilities.
+	 * @return array<string, bool|mixed> Modified capabilities.
 	 */
 	public function modify_user_caps( $allcaps ): array {
 		// if this is branch site.

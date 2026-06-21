@@ -16,17 +16,6 @@ import { __ } from '@wordpress/i18n';
  */
 import { isValidUrl } from '../js/utils';
 import type { defaultBrandSite } from '@/admin/settings/page';
-
-interface SiteModalProps {
-	formData: typeof defaultBrandSite;
-	setFormData: ( data: typeof defaultBrandSite ) => void;
-	onSubmit: () => Promise< Response | void >;
-	onClose: () => void;
-	editing: boolean;
-	sites: ( typeof defaultBrandSite )[];
-	originalData: typeof defaultBrandSite | undefined;
-}
-
 interface ErrorsType {
 	name: string;
 	url: string;
@@ -42,15 +31,23 @@ const SiteModal = ( {
 	editing,
 	sites,
 	originalData,
-}: SiteModalProps ) => {
+}: {
+	formData: typeof defaultBrandSite;
+	setFormData: ( data: typeof defaultBrandSite ) => void;
+	onSubmit: () => Promise< Response | void >;
+	onClose: () => void;
+	editing: boolean;
+	sites: ( typeof defaultBrandSite )[];
+	originalData: typeof defaultBrandSite | undefined;
+} ) => {
 	const [ errors, setErrors ] = useState< ErrorsType >( {
 		name: '',
 		url: '',
 		api_key: '',
 		message: '',
 	} );
-	const [ showNotice, setShowNotice ] = useState< boolean >( false );
-	const [ isProcessing, setIsProcessing ] = useState< boolean >( false );
+	const [ showNotice, setShowNotice ] = useState( false );
+	const [ isProcessing, setIsProcessing ] = useState( false );
 
 	// Check if form data has changed from original data (only for editing mode)
 	const hasChanges = useMemo( () => {
@@ -182,7 +179,7 @@ const SiteModal = ( {
 				} );
 				setShowNotice( true );
 			}
-		} catch ( error ) {
+		} catch {
 			setErrors( {
 				...newErrors,
 				message: __(
@@ -266,7 +263,7 @@ const SiteModal = ( {
 					setFormData( { ...formData, api_key: value } )
 				}
 				help={ __(
-					'This is the api key that will be used to authenticate the site for OneAccess.',
+					'This is the API key that will be used to authenticate the site for OneAccess.',
 					'oneaccess'
 				) }
 				__nextHasNoMarginBottom

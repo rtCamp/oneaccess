@@ -1,12 +1,11 @@
 <?php
-
-declare(strict_types = 1);
-
 /**
  * DB module.
  *
  * @package OneAccess
  */
+
+declare(strict_types = 1);
 
 namespace OneAccess\Modules\Core;
 
@@ -126,7 +125,7 @@ class DB implements Registrable {
 	/**
 	 * Add deduplicated users to the database.
 	 *
-	 * @param array $user_data Users data to be added.
+	 * @param array<int, array<string, mixed>> $user_data Users data to be added.
 	 */
 	public static function add_deduplicated_users( array $user_data ): void {
 		foreach ( $user_data as $user ) {
@@ -142,8 +141,8 @@ class DB implements Registrable {
 	/**
 	 * Process a single user for deduplication.
 	 *
-	 * @param string $user_email User email.
-	 * @param array  $user User data.
+	 * @param string               $user_email User email.
+	 * @param array<string, mixed> $user User data.
 	 */
 	private static function process_user( string $user_email, array $user ): void {
 		global $wpdb;
@@ -187,9 +186,9 @@ class DB implements Registrable {
 	/**
 	 * Update existing user with new site info.
 	 *
-	 * @param object $existing_user Existing user object.
-	 * @param array  $user New user data.
-	 * @param string $table_name Table name.
+	 * @param object               $existing_user Existing user object.
+	 * @param array<string, mixed> $user New user data.
+	 * @param string               $table_name Table name.
 	 */
 	private static function update_existing_user( $existing_user, array $user, string $table_name ): void {
 		$existing_sites_info = isset( $existing_user->sites_info ) ? self::decode_sites_info( $existing_user->sites_info ) : [];
@@ -211,6 +210,8 @@ class DB implements Registrable {
 	 * Decode sites info JSON.
 	 *
 	 * @param string $sites_info_json Sites info in JSON format.
+	 *
+	 * @return array<int, array<string, mixed>> Decoded sites info.
 	 */
 	private static function decode_sites_info( $sites_info_json ): array {
 		$existing_sites_info = json_decode( $sites_info_json, true );
@@ -223,7 +224,14 @@ class DB implements Registrable {
 	/**
 	 * Build site info array from user data.
 	 *
-	 * @param array $user User data.
+	 * @param array<string, mixed> $user User data.
+	 *
+	 * @return array{
+	 *   site_name: string,
+	 *   site_url: string,
+	 *   user_id: mixed,
+	 *   roles: mixed,
+	 * } Site info array.
 	 */
 	private static function build_site_info( array $user ): array {
 		return [
@@ -237,8 +245,8 @@ class DB implements Registrable {
 	/**
 	 * Check if site already exists in existing sites info.
 	 *
-	 * @param array $existing_sites_info Existing sites info.
-	 * @param array $new_site_info New site info.
+	 * @param array<int, array<string, mixed>> $existing_sites_info Existing sites info.
+	 * @param array<string, mixed>             $new_site_info New site info.
 	 */
 	private static function check_site_exists( array $existing_sites_info, array $new_site_info ): bool {
 		foreach ( $existing_sites_info as $site_info ) {
@@ -252,8 +260,10 @@ class DB implements Registrable {
 	/**
 	 * Update site info in existing sites info.
 	 *
-	 * @param array $existing_sites_info Existing sites info.
-	 * @param array $new_site_info New site info.
+	 * @param array<int, array<string, mixed>> $existing_sites_info Existing sites info.
+	 * @param array<string, mixed>             $new_site_info New site info.
+	 *
+	 * @return array<int, array<string, mixed>> Updated sites info.
 	 */
 	private static function update_site_info( array $existing_sites_info, array $new_site_info ): array {
 		foreach ( $existing_sites_info as &$site_info ) {
@@ -270,9 +280,9 @@ class DB implements Registrable {
 	/**
 	 * Save updated user data to the database.
 	 *
-	 * @param int    $user_id User ID.
-	 * @param array  $sites_info Updated sites info.
-	 * @param string $table_name Table name.
+	 * @param int                              $user_id User ID.
+	 * @param array<int, array<string, mixed>> $sites_info Updated sites info.
+	 * @param string                           $table_name Table name.
 	 */
 	private static function save_updated_user( int $user_id, array $sites_info, string $table_name ): void {
 		global $wpdb;
@@ -294,9 +304,9 @@ class DB implements Registrable {
 	/**
 	 * Insert new user into the database.
 	 *
-	 * @param string $user_email User email.
-	 * @param array  $user User data.
-	 * @param string $table_name Table name.
+	 * @param string               $user_email User email.
+	 * @param array<string, mixed> $user User data.
+	 * @param string               $table_name Table name.
 	 */
 	private static function insert_new_user( string $user_email, array $user, string $table_name ): void {
 		global $wpdb;
@@ -329,9 +339,9 @@ class DB implements Registrable {
 	/**
 	 * Add profile request to the database.
 	 *
-	 * @param int    $user_id User ID for whom profile request is made.
-	 * @param array  $request_data Profile request data.
-	 * @param string $status Status of the profile request.
+	 * @param int                  $user_id User ID for whom profile request is made.
+	 * @param array<string, mixed> $request_data Profile request data.
+	 * @param string               $status Status of the profile request.
 	 */
 	public static function add_profile_request( int $user_id, array $request_data, string $status = 'pending' ): void {
 		global $wpdb;
@@ -388,7 +398,7 @@ class DB implements Registrable {
 	 *
 	 * @param int $user_id User ID.
 	 *
-	 * @return array|null
+	 * @return array<string, mixed>|null
 	 */
 	public static function get_pending_profile_request_by_user_id( int $user_id ): ?array {
 		global $wpdb;
@@ -418,7 +428,7 @@ class DB implements Registrable {
 	 *
 	 * @param int $user_id User ID.
 	 *
-	 * @return array|null
+	 * @return array<string, mixed>|null
 	 */
 	public static function get_rejected_profile_request_by_user_id( int $user_id ): ?array {
 		global $wpdb;
@@ -450,7 +460,7 @@ class DB implements Registrable {
 	 *
 	 * @param int $user_id User ID.
 	 *
-	 * @return array|null
+	 * @return array<string, mixed>|null
 	 */
 	public static function get_latest_profile_request_by_user_id( int $user_id ): ?array {
 		global $wpdb;
@@ -479,7 +489,7 @@ class DB implements Registrable {
 	 *
 	 * @param int $request_id Request ID.
 	 *
-	 * @return array|null
+	 * @return array<string, mixed>|null
 	 */
 	public static function get_profile_request_by_id( int $request_id ): ?array {
 		global $wpdb;
@@ -658,13 +668,13 @@ class DB implements Registrable {
 	/**
 	 * Add user to deduplicated users table.
 	 *
-	 * @param string $email User email.
-	 * @param string $first_name User first name.
-	 * @param string $last_name User last name.
-	 * @param string $site_name Site name.
-	 * @param string $site_url Site URL.
-	 * @param int    $user_id User ID on the site.
-	 * @param array  $roles User roles on the site.
+	 * @param string             $email User email.
+	 * @param string             $first_name User first name.
+	 * @param string             $last_name User last name.
+	 * @param string             $site_name Site name.
+	 * @param string             $site_url Site URL.
+	 * @param int                $user_id User ID on the site.
+	 * @param array<int, string> $roles User roles on the site.
 	 */
 	public static function add_user_to_deduplicated_users(
 		string $email,
