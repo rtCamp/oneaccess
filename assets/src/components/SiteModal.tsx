@@ -16,17 +16,6 @@ import { __ } from '@wordpress/i18n';
  */
 import { isValidUrl } from '../js/utils';
 import type { defaultBrandSite } from '@/admin/settings/page';
-
-interface SiteModalProps {
-	formData: typeof defaultBrandSite;
-	setFormData: ( data: typeof defaultBrandSite ) => void;
-	onSubmit: () => Promise< Response | void >;
-	onClose: () => void;
-	editing: boolean;
-	sites: typeof defaultBrandSite[];
-	originalData: typeof defaultBrandSite | undefined;
-}
-
 interface ErrorsType {
 	name: string;
 	url: string;
@@ -34,18 +23,31 @@ interface ErrorsType {
 	message: string;
 }
 
-const SiteModal = (
-	{ formData, setFormData, onSubmit, onClose, editing, sites, originalData }
-	: SiteModalProps,
-) => {
+const SiteModal = ( {
+	formData,
+	setFormData,
+	onSubmit,
+	onClose,
+	editing,
+	sites,
+	originalData,
+}: {
+	formData: typeof defaultBrandSite;
+	setFormData: ( data: typeof defaultBrandSite ) => void;
+	onSubmit: () => Promise< Response | void >;
+	onClose: () => void;
+	editing: boolean;
+	sites: ( typeof defaultBrandSite )[];
+	originalData: typeof defaultBrandSite | undefined;
+} ) => {
 	const [ errors, setErrors ] = useState< ErrorsType >( {
 		name: '',
 		url: '',
 		api_key: '',
 		message: '',
 	} );
-	const [ showNotice, setShowNotice ] = useState< boolean >( false );
-	const [ isProcessing, setIsProcessing ] = useState< boolean >( false );
+	const [ showNotice, setShowNotice ] = useState( false );
+	const [ isProcessing, setIsProcessing ] = useState( false );
 
 	// Check if form data has changed from original data (only for editing mode)
 	const hasChanges = useMemo( () => {
@@ -60,25 +62,35 @@ const SiteModal = (
 		);
 	}, [ editing, formData, originalData ] );
 
-	const handleSubmit = async ():Promise<void> => {
+	const handleSubmit = async (): Promise< void > => {
 		// Validate inputs
 		let siteUrlError = '';
 		if ( ! formData.url.trim() ) {
 			siteUrlError = __( 'Site URL is required.', 'oneaccess' );
 		} else if ( ! isValidUrl( formData.url ) ) {
-			siteUrlError = __( 'Enter a valid URL (must start with http or https).', 'oneaccess' );
+			siteUrlError = __(
+				'Enter a valid URL (must start with http or https).',
+				'oneaccess'
+			);
 		}
 
 		const newErrors = {
-			name: ! formData.name.trim() ? __( 'Site Name is required.', 'oneaccess' ) : '',
+			name: ! formData.name.trim()
+				? __( 'Site Name is required.', 'oneaccess' )
+				: '',
 			url: siteUrlError,
-			api_key: ! formData.api_key.trim() ? __( 'API Key is required.', 'oneaccess' ) : '',
+			api_key: ! formData.api_key.trim()
+				? __( 'API Key is required.', 'oneaccess' )
+				: '',
 			message: '',
 		};
 
 		// make sure site name is under 20 characters
 		if ( formData.name.length > 20 ) {
-			newErrors.name = __( 'Site Name must be under 20 characters.', 'oneaccess' );
+			newErrors.name = __(
+				'Site Name must be under 20 characters.',
+				'oneaccess'
+			);
 		}
 
 		setErrors( newErrors );
@@ -103,14 +115,17 @@ const SiteModal = (
 						'Content-Type': 'application/json',
 						'X-OneAccess-Token': formData.api_key,
 					},
-				},
+				}
 			);
 
 			const healthCheckData = await healthCheck.json();
 			if ( ! healthCheckData.success ) {
 				setErrors( {
 					...newErrors,
-					message: __( 'Health check failed, please verify API key and make sure there\'s no governing site connected.', 'oneaccess' ),
+					message: __(
+						"Health check failed, please verify API key and make sure there's no governing site connected.",
+						'oneaccess'
+					),
 				} );
 				setShowNotice( true );
 				setIsProcessing( false );
@@ -138,7 +153,10 @@ const SiteModal = (
 			if ( isAlreadyExists ) {
 				setErrors( {
 					...newErrors,
-					message: __( 'Site URL already exists. Please use a different URL.', 'oneaccess' ),
+					message: __(
+						'Site URL already exists. Please use a different URL.',
+						'oneaccess'
+					),
 				} );
 				setShowNotice( true );
 				setIsProcessing( false );
@@ -152,14 +170,22 @@ const SiteModal = (
 				const errorData = await submitResponse?.json();
 				setErrors( {
 					...newErrors,
-					message: errorData.message || __( 'An error occurred while saving the site. Please try again.', 'oneaccess' ),
+					message:
+						errorData.message ||
+						__(
+							'An error occurred while saving the site. Please try again.',
+							'oneaccess'
+						),
 				} );
 				setShowNotice( true );
 			}
-		} catch ( error ) {
+		} catch {
 			setErrors( {
 				...newErrors,
-				message: __( 'An unexpected error occurred. Please try again.', 'oneaccess' ),
+				message: __(
+					'An unexpected error occurred. Please try again.',
+					'oneaccess'
+				),
 			} );
 			setShowNotice( true );
 			setIsProcessing( false );
@@ -173,7 +199,8 @@ const SiteModal = (
 	// 1. Currently processing, OR
 	// 2. Required fields are empty, OR
 	// 3. In editing mode and no changes have been made
-	const isButtonDisabled = isProcessing ||
+	const isButtonDisabled =
+		isProcessing ||
 		! formData.name ||
 		! formData.url ||
 		! formData.api_key ||
@@ -181,42 +208,64 @@ const SiteModal = (
 
 	return (
 		<Modal
-			title={ editing ? __( 'Edit Brand Site', 'oneaccess' ) : __( 'Add Brand Site', 'oneaccess' ) }
+			title={
+				editing
+					? __( 'Edit Brand Site', 'oneaccess' )
+					: __( 'Add Brand Site', 'oneaccess' )
+			}
 			onRequestClose={ onClose }
 			size="medium"
-			shouldCloseOnClickOutside={ true }
+			shouldCloseOnClickOutside
 		>
 			{ showNotice && (
 				<Notice
 					status="error"
-					isDismissible={ true }
+					isDismissible
 					onRemove={ () => setShowNotice( false ) }
 				>
-					{ errors.message || errors.name || errors.url || errors.api_key }
+					{ errors.message ||
+						errors.name ||
+						errors.url ||
+						errors.api_key }
 				</Notice>
 			) }
 
 			<TextControl
 				label={ __( 'Site Name*', 'oneaccess' ) }
 				value={ formData.name }
-				onChange={ ( value ) => setFormData( { ...formData, name: value } ) }
-				help={ __( 'This is the name of the site that will be registered.', 'oneaccess' ) }
+				onChange={ ( value ) =>
+					setFormData( { ...formData, name: value } )
+				}
+				help={ __(
+					'This is the name of the site that will be registered.',
+					'oneaccess'
+				) }
 				__next40pxDefaultSize
 				__nextHasNoMarginBottom
 			/>
 			<TextControl
 				label={ __( 'Site URL*', 'oneaccess' ) }
 				value={ formData.url }
-				onChange={ ( value ) => setFormData( { ...formData, url: value } ) }
-				help={ __( 'It must start with http or https and end with /, like: https://rtcamp.com/', 'oneaccess' ) }
+				onChange={ ( value ) =>
+					setFormData( { ...formData, url: value } )
+				}
+				help={ __(
+					'It must start with http or https and end with /, like: https://rtcamp.com/',
+					'oneaccess'
+				) }
 				__next40pxDefaultSize
 				__nextHasNoMarginBottom
 			/>
 			<TextareaControl
 				label={ __( 'API Key*', 'oneaccess' ) }
 				value={ formData.api_key }
-				onChange={ ( value ) => setFormData( { ...formData, api_key: value } ) }
-				help={ __( 'This is the api key that will be used to authenticate the site for OneAccess.', 'oneaccess' ) }
+				onChange={ ( value ) =>
+					setFormData( { ...formData, api_key: value } )
+				}
+				help={ __(
+					'This is the API key that will be used to authenticate the site for OneAccess.',
+					'oneaccess'
+				) }
 				__nextHasNoMarginBottom
 			/>
 
@@ -227,9 +276,9 @@ const SiteModal = (
 				disabled={ isButtonDisabled }
 				style={ { marginTop: '12px' } }
 			>
-				{ (
-					editing ? __( 'Update Site', 'oneaccess' ) : __( 'Add Site', 'oneaccess' )
-				) }
+				{ editing
+					? __( 'Update Site', 'oneaccess' )
+					: __( 'Add Site', 'oneaccess' ) }
 			</Button>
 		</Modal>
 	);

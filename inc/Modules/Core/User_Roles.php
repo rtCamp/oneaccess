@@ -5,6 +5,8 @@
  * @package OneAccess
  */
 
+declare(strict_types = 1);
+
 namespace OneAccess\Modules\Core;
 
 use OneAccess\Contracts\Interfaces\Registrable;
@@ -14,7 +16,6 @@ use OneAccess\Modules\Settings\Settings;
  * Class User_Roles
  */
 class User_Roles implements Registrable {
-
 	/**
 	 * Prefix for custom roles.
 	 *
@@ -41,9 +42,9 @@ class User_Roles implements Registrable {
 	/**
 	 * Modify user capabilities based on the site type.
 	 *
-	 * @param array $allcaps All capabilities for the user.
+	 * @param array<string, bool|mixed> $allcaps All capabilities for the user.
 	 *
-	 * @return array Modified capabilities.
+	 * @return array<string, bool|mixed> Modified capabilities.
 	 */
 	public function modify_user_caps( $allcaps ): array {
 		// if this is branch site.
@@ -186,8 +187,6 @@ class User_Roles implements Registrable {
 
 	/**
 	 * Update user role on plugin activation.
-	 *
-	 * @return void
 	 */
 	public static function update_user_role_on_activation(): void {
 		$current_user = wp_get_current_user();

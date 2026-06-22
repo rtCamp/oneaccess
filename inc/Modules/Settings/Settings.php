@@ -18,10 +18,6 @@ use OneAccess\Encryptor;
 final class Settings implements Registrable {
 	/**
 	 * The setting prefix.
-	 *
-	 * @todo need to replace globally with single source of truth.
-	 *
-	 * @var string
 	 */
 	private const SETTING_PREFIX = 'oneaccess_';
 
@@ -35,9 +31,11 @@ final class Settings implements Registrable {
 	 */
 	// Shared settings.
 	public const OPTION_SITE_TYPE = self::SETTING_PREFIX . 'site_type';
+
 	// Consumer settings.
 	public const OPTION_CONSUMER_API_KEY         = self::SETTING_PREFIX . 'consumer_api_key';
 	public const OPTION_CONSUMER_PARENT_SITE_URL = self::SETTING_PREFIX . 'parent_site_url';
+
 	// Governing settings.
 	public const OPTION_GOVERNING_SHARED_SITES = self::SETTING_PREFIX . 'shared_sites';
 
@@ -99,7 +97,7 @@ final class Settings implements Registrable {
 				'type'              => 'string',
 				'label'             => __( 'Parent Site URL', 'oneaccess' ),
 				'description'       => __( 'The URL of the governing site that manages this consumer site.', 'oneaccess' ),
-				'sanitize_callback' => static function ( $value ): string|null {
+				'sanitize_callback' => static function ( $value ) {
 					return is_string( $value ) ? untrailingslashit( esc_url_raw( $value ) ) : null;
 				},
 				'show_in_rest'      => [
@@ -160,10 +158,12 @@ final class Settings implements Registrable {
 	/**
 	 * Ensures the API key is generated when the site type changes to 'consumer'.
 	 *
+	 * @internal Hook callback
+	 *
 	 * @param mixed $old_value The old value.
 	 * @param mixed $new_value The new value.
 	 */
-	public function on_site_type_change( $old_value, $new_value ): void {
+	public function on_site_type_change( $old_value, $new_value ): void { // phpcs:ignore SlevomatCodingStandard.Functions.UnusedParameter.UnusedParameter
 		if ( self::SITE_TYPE_CONSUMER !== $new_value ) {
 			return;
 		}
@@ -222,7 +222,7 @@ final class Settings implements Registrable {
 	 */
 
 	/**
-	 * Get brand sites configured for this governing site.
+	 * Get brand sites configured for this governing site, keyed by the (trailing-slash) URL.
 	 *
 	 * @return array<string,array{
 	 *  api_key: string,
@@ -240,11 +240,14 @@ final class Settings implements Registrable {
 				continue;
 			}
 
-			$brands_to_return[ $brand['url'] ] = [
+			// Always use a trailing-slash URL.
+			$url = trailingslashit( $brand['url'] );
+
+			$brands_to_return[ $url ] = [
 				'api_key' => $brand['api_key'] ?? '',
 				'id'      => $brand['id'] ?? '',
 				'name'    => $brand['name'] ?? '',
-				'url'     => $brand['url'] ?? '',
+				'url'     => $url,
 			];
 		}
 
@@ -294,17 +297,6 @@ final class Settings implements Registrable {
 	}
 
 	/**
-	 * Set the shared sites.
-	 *
-	 * @param array $sites The array of sites to set.
-	 *
-	 * @return bool True on success, false on failure.
-	 */
-	public static function set_shared_sites( array $sites ): bool {
-		return update_option( self::OPTION_GOVERNING_SHARED_SITES, array_values( $sites ), false );
-	}
-
-	/**
 	 * Get the current site type.
 	 */
 	public static function get_site_type(): ?string {
@@ -329,6 +321,8 @@ final class Settings implements Registrable {
 
 	/**
 	 * Gets the API key, generating a new one if it doesn't exist.
+	 *
+	 * Returns an empty string on failure.
 	 */
 	public static function get_api_key(): string {
 		$api_key = get_option( self::OPTION_CONSUMER_API_KEY, '' );
@@ -340,10 +334,20 @@ final class Settings implements Registrable {
 
 	/**
 	 * Regenerates the API key.
+	 *
+	 * @return string The new (unencrypted) API key.
 	 */
 	public static function regenerate_api_key(): string {
 		$api_key = self::generate_api_key();
-		update_option( self::OPTION_CONSUMER_API_KEY, Encryptor::encrypt( $api_key ) );
+
+		$encrypted_key = Encryptor::encrypt( $api_key );
+
+		if ( ! $encrypted_key ) {
+			return '';
+		}
+
+		update_option( self::OPTION_CONSUMER_API_KEY, $encrypted_key, false );
+
 		return $api_key;
 	}
 

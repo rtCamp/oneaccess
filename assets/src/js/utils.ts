@@ -1,18 +1,4 @@
-/**
- * Helper function to validate if a string is a well-formed URL.
- *
- * @param {string} str - The string to validate as a URL.
- *
- * @return {boolean} True if the string is a valid URL, false otherwise.
- */
-const isURL = ( str : string ) : boolean => {
-	try {
-		new URL( str );
-		return true;
-	} catch {
-		return false;
-	}
-};
+export type StrengthLevel = 'very-weak' | 'weak' | 'medium' | 'strong';
 
 /**
  * Validates if a given string is a valid URL.
@@ -21,11 +7,11 @@ const isURL = ( str : string ) : boolean => {
  *
  * @return {boolean} True if the URL is valid, false otherwise.
  */
-const isValidUrl = ( url:string ):boolean => {
+export const isValidUrl = ( url: string ): boolean => {
 	try {
-		const parsedUrl = new URL( url );
-		return isURL( parsedUrl.href );
-	} catch ( e ) {
+		new URL( url );
+		return true;
+	} catch {
 		return false;
 	}
 };
@@ -37,7 +23,7 @@ const isValidUrl = ( url:string ):boolean => {
  *
  * @return {boolean} True if the email is valid, false otherwise.
  */
-const isValidEmail = ( email:string ):boolean => {
+export const isValidEmail = ( email: string ): boolean => {
 	const pattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
 	return pattern.test( email );
 };
@@ -46,15 +32,23 @@ const isValidEmail = ( email:string ):boolean => {
  * Checks the strength of a given password.
  *
  * @param {string} password - The password to check.
- *
- * @return {string} The strength of the password: 'very-weak', 'weak', 'medium', or 'strong'.
  */
 
-const checkPasswordStrength = ( password:string ):string => {
-	let strength = 'weak';
-	if ( password.length >= 12 && /[A-Z]/.test( password ) && /[0-9]/.test( password ) && /[^A-Za-z0-9]/.test( password ) ) {
+export const checkPasswordStrength = ( password: string ): StrengthLevel => {
+	let strength: StrengthLevel = 'weak';
+	if (
+		password.length >= 12 &&
+		/[A-Z]/.test( password ) &&
+		/[0-9]/.test( password ) &&
+		/[^A-Za-z0-9]/.test( password )
+	) {
 		strength = 'strong';
-	} else if ( password.length >= 8 && /[A-Z]/.test( password ) && /[a-z]/.test( password ) && /[0-9]/.test( password ) ) {
+	} else if (
+		password.length >= 8 &&
+		/[A-Z]/.test( password ) &&
+		/[a-z]/.test( password ) &&
+		/[0-9]/.test( password )
+	) {
 		strength = 'medium';
 	} else if ( password.length >= 8 ) {
 		strength = 'weak';
@@ -66,10 +60,8 @@ const checkPasswordStrength = ( password:string ):string => {
 
 /**
  * Mapping of password strength levels to their corresponding width percentages.
- *
- * @return {Object} An object mapping password strength levels to width percentages.
  */
-const strengthWidths = {
+export const strengthWidths: Record< StrengthLevel | 'default', string > = {
 	'very-weak': '25%',
 	weak: '50%',
 	medium: '75%',
@@ -80,12 +72,13 @@ const strengthWidths = {
 /**
  * Gets the color associated with a given password strength.
  *
- * @param {string} passwordStrength - The strength of the password.
+ * @param {StrengthLevel | 'default'} passwordStrength - The strength of the password.
  *
  * @return {string} The color code associated with the password strength.
  */
-
-const getStrengthColor = ( passwordStrength:string ):string => {
+export const getStrengthColor = (
+	passwordStrength: StrengthLevel | 'default'
+): string => {
 	switch ( passwordStrength ) {
 		case 'very-weak':
 			return '#dc3545';
@@ -98,13 +91,4 @@ const getStrengthColor = ( passwordStrength:string ):string => {
 		default:
 			return '#e1e5e9';
 	}
-};
-
-export {
-	isValidEmail,
-	isURL,
-	isValidUrl,
-	checkPasswordStrength,
-	strengthWidths,
-	getStrengthColor,
 };

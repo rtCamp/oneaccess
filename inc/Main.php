@@ -64,6 +64,9 @@ final class Main {
 			return;
 		}
 
+		// @todo - remove when submitting to .org, as this is handled by WordPress core.
+		$this->load_textdomain();
+
 		// Load the plugin classes.
 		$this->load();
 
@@ -115,5 +118,23 @@ final class Main {
 		}
 
 		// Do other generalizable stuff here.
+	}
+
+	/**
+	 * Load the plugin textdomain.
+	 *
+	 * @todo this should be removed before submitting to .org
+	 */
+	public function load_textdomain(): void {
+		add_action(
+			'init',
+			static function (): void {
+				load_plugin_textdomain(
+					'oneaccess',
+					false,
+					dirname( (string) ONEACCESS_PLUGIN_BASENAME ) . '/languages/'
+				);
+			}
+		);
 	}
 }

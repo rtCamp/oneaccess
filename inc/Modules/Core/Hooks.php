@@ -5,6 +5,8 @@
  * @package OneAccess
  */
 
+declare(strict_types = 1);
+
 namespace OneAccess\Modules\Core;
 
 use OneAccess\Contracts\Interfaces\Registrable;
@@ -17,7 +19,6 @@ use OneAccess\Modules\Settings\Settings;
  * Manages hooks for consumer sites to sync users with the governing site.
  */
 class Hooks implements Registrable {
-
 	/**
 	 * Actions controller instance.
 	 *
@@ -58,8 +59,6 @@ class Hooks implements Registrable {
 	 * Trigger user deduplication process.
 	 *
 	 * This will avoid return type issue with phpstan.
-	 *
-	 * @return void
 	 */
 	public function user_deduplication(): void {
 		$this->actions_controller->send_users_for_deduplication();

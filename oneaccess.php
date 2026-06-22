@@ -1,32 +1,44 @@
 <?php
 /**
- * Plugin Name: OneAccess
- * Description: OneAccess is plugin to manage user accounts across multiple sites in a WordPress.
- * Author: Utsav Patel, rtCamp
- * Author URI: https://rtcamp.com
- * Plugin URI: https://github.com/rtCamp/OneAccess/
- * Update URI: https://github.com/rtCamp/OneAccess/
- * License: GPL2+
- * License URI: https://www.gnu.org/licenses/gpl-2.0.txt
- * Text Domain: oneaccess
- * Domain Path: /languages
- * Version: 1.1.3
- * Requires PHP: 8.0
- * Requires at least: 6.8
- * Tested up to: 6.9
+ * OneAccess
  *
- * @package OneAccess
+ * @package           OneAccess
+ * @author            rtCamp
+ * @copyright         2025 rtCamp
+ * @license           GPL-2.0-or-later
+ *
+ * Plugin Name:       OneAccess
+ * Plugin URI:        https://github.com/rtCamp/oneaccess
+ * Description:       Manage user accounts across multiple sites in a WordPress network.
+ * Author:            rtCamp
+ * Author URI:        https://rtcamp.com
+ * Update URI:       https://github.com/rtCamp/oneaccess
+ * License:           GPL-2.0-or-later
+ * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ * Text Domain:       oneaccess
+ * Domain Path:       /languages
+ * Version:           1.1.3
+ * Requires PHP:      8.2
+ * Requires at least: 6.8
+ * Tested up to:      6.9
  */
+
+declare( strict_types = 1 );
 
 namespace OneAccess;
 
 // Exit if accessed directly.
-defined( 'ABSPATH' ) || exit();
+defined( 'ABSPATH' ) || exit;
 
 /**
  * Define the plugin constants.
  */
 function constants(): void {
+	/**
+	 * File path to the plugin's main file.
+	 */
+	define( 'ONEACCESS_FILE', __FILE__ );
+
 	/**
 	 * Version of the plugin.
 	 */
@@ -50,32 +62,15 @@ function constants(): void {
 
 constants();
 
-// If autoloader failed, we cannot proceed.
+// If autoloader fails, we cannot proceed.
 require_once __DIR__ . '/inc/Autoloader.php';
 if ( ! \OneAccess\Autoloader::autoload() ) {
 	return;
 }
 
-/**
- * Load plugin.
- */
-if ( class_exists( 'OneAccess\Main' ) ) {
-	add_action(
-		'plugins_loaded',
-		'\OneAccess\load_plugin'
-	);
-}
-
-/**
- * Load OneAccess plugin functionality.
- *
- * @return void
- */
-function load_plugin(): void {
+// Load the plugin.
+if ( class_exists( '\OneAccess\Main' ) ) {
 	\OneAccess\Main::instance();
-
-	//phpcs:ignore PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound -- @todo remove before submitting to .org.
-	load_plugin_textdomain( 'oneaccess', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
 }
 
 /**

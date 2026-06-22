@@ -5,6 +5,8 @@
  * @package OneAccess
  */
 
+declare(strict_types = 1);
+
 namespace OneAccess\Modules\Rest;
 
 use OneAccess\Modules\Core\DB;
@@ -16,7 +18,6 @@ use WP_REST_Server;
  * Class Governing_Site_Controller
  */
 class Governing_Site_Controller extends Abstract_REST_Controller {
-
 	/**
 	 * {@inheritDoc}
 	 */
@@ -339,8 +340,6 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 	 * Delete user.
 	 *
 	 * @param \WP_REST_Request $request The REST request object.
-	 *
-	 * @return \WP_REST_Response
 	 */
 	public function delete_user( \WP_REST_Request $request ): \WP_REST_Response {
 		$email    = sanitize_email( $request->get_param( 'email' ) );
@@ -391,8 +390,6 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 	 * Delete user from multiple sites.
 	 *
 	 * @param \WP_REST_Request $request The REST request object.
-	 *
-	 * @return \WP_REST_Response
 	 */
 	public function delete_user_from_sites( \WP_REST_Request $request ): \WP_REST_Response {
 		$email    = sanitize_email( $request->get_param( 'email' ) );
@@ -517,8 +514,6 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 	 * Reject user profile request.
 	 *
 	 * @param \WP_REST_Request $request The REST request object.
-	 *
-	 * @return \WP_REST_Response
 	 */
 	public function reject_profile( WP_REST_Request $request ): \WP_REST_Response {
 		$user_email        = sanitize_email( $request->get_param( 'user_email' ) );
@@ -576,7 +571,6 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 	 * Approve user profile request.
 	 *
 	 * @param \WP_REST_Request $request The REST request object.
-	 * @return \WP_REST_Response
 	 */
 	public function approve_profile( \WP_REST_Request $request ): \WP_REST_Response {
 
@@ -693,7 +687,6 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 	 * Add user to multiple sites.
 	 *
 	 * @param \WP_REST_Request $request The REST request object.
-	 * @return \WP_REST_Response
 	 */
 	public function add_user_to_sites( \WP_REST_Request $request ): \WP_REST_Response {
 		$email     = sanitize_email( $request->get_param( 'email' ) );
@@ -858,8 +851,6 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 	 * Update user.
 	 *
 	 * @param \WP_REST_Request $request The REST request object.
-	 *
-	 * @return \WP_REST_Response
 	 */
 	public function update_user( \WP_REST_Request $request ): \WP_REST_Response {
 		$email    = sanitize_email( $request->get_param( 'email' ) );
@@ -915,7 +906,6 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 	 * Update user roles for multiple sites.
 	 *
 	 * @param \WP_REST_Request $request The REST request object.
-	 * @return \WP_REST_Response
 	 */
 	public function update_user_roles_for_sites( \WP_REST_Request $request ): \WP_REST_Response {
 		$email    = sanitize_email( $request->get_param( 'email' ) );
@@ -1035,7 +1025,6 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 	 * Create a new user.
 	 *
 	 * @param \WP_REST_Request $request The REST request object.
-	 * @return \WP_REST_Response
 	 */
 	public function create_user( \WP_REST_Request $request ): \WP_REST_Response {
 		$username  = sanitize_user( $request->get_param( 'username' ) );
@@ -1136,8 +1125,6 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 	 * Get users.
 	 *
 	 * @param \WP_REST_Request $request The REST request object.
-	 *
-	 * @return \WP_REST_Response
 	 */
 	public function get_users( WP_REST_Request $request ): \WP_REST_Response {
 
@@ -1289,8 +1276,6 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 
 	/**
 	 * Generate a strong password.
-	 *
-	 * @return \WP_REST_Response
 	 */
 	public function generate_strong_password(): \WP_REST_Response {
 
@@ -1313,7 +1298,6 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 	 * Create users for multiple sites.
 	 *
 	 * @param \WP_REST_Request $request The REST request object.
-	 * @return \WP_REST_Response
 	 */
 	public function create_users_for_sites( \WP_REST_Request $request ): \WP_REST_Response {
 

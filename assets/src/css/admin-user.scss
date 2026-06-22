@@ -9,7 +9,7 @@
 		text-align: center;
 	}
 
-	.oneaccess-pill--no-request{
+	.oneaccess-pill--no-request {
 		background-color: #f1f1f1;
 		color: #666;
 	}
@@ -75,13 +75,12 @@
 	}
 }
 
-.oneaccess-warning-notice +
-.notice.updated[id="message"] {
+.oneaccess-warning-notice + .notice.updated[id="message"] {
 
 	&:has(p strong),
-	&:has( a[href*="users.php"] ),
-	&:has( a[href*="user-edit.php"] ),
-	&:has( a[href*="profile.php"] ) {
+	&:has(a[href*="users.php"]),
+	&:has(a[href*="user-edit.php"]),
+	&:has(a[href*="profile.php"]) {
 		display: none !important;
 	}
 }

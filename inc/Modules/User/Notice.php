@@ -5,6 +5,8 @@
  * @package OneAccess
  */
 
+declare(strict_types = 1);
+
 namespace OneAccess\Modules\User;
 
 use OneAccess\Contracts\Interfaces\Registrable;
@@ -15,7 +17,6 @@ use OneAccess\Modules\Settings\Settings;
  * Class Notice
  */
 class Notice implements Registrable {
-
 	/**
 	 * Rejection comment.
 	 *
@@ -35,8 +36,6 @@ class Notice implements Registrable {
 	 * Display user profile notices.
 	 *
 	 * @param string $hook_suffix Admin page name.
-	 *
-	 * @return void
 	 */
 	public function user_profile_notices( $hook_suffix ): void {
 		// early return if this is not a brand site.
@@ -74,8 +73,6 @@ class Notice implements Registrable {
 
 	/**
 	 * To render pending approval notice.
-	 *
-	 * @return void
 	 */
 	public function pending_notice(): void {
 		$notice_message = esc_html__( 'Your profile update is pending approval. You will not be able to edit your profile until it is approved or rejected by the network administrator.', 'oneaccess' );
@@ -90,8 +87,6 @@ class Notice implements Registrable {
 
 	/**
 	 * To render rejected approval notice.
-	 *
-	 * @return void
 	 */
 	public function rejected_notice(): void {
 		$notice_message    = esc_html__( 'Your profile update has been rejected. Please contact the network administrator for more information.', 'oneaccess' );

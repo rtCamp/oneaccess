@@ -5,6 +5,8 @@
  * @package OneAccess
  */
 
+declare(strict_types = 1);
+
 namespace OneAccess\Modules\Rest;
 
 use OneAccess\Encryptor;
@@ -17,7 +19,6 @@ use WP_REST_Response;
  * Class Actions_Controller
  */
 class Actions_Controller extends Abstract_REST_Controller {
-
 	/**
 	 * Batch size for user processing
 	 *
@@ -172,8 +173,6 @@ class Actions_Controller extends Abstract_REST_Controller {
 	 * Permission callback to verify request from brand site to governing site.
 	 *
 	 * @param \WP_REST_Request $request Request object.
-	 *
-	 * @return bool
 	 */
 	public static function brand_site_to_governing_site_permission_check( WP_REST_Request $request ): bool {
 		// check X-oneaccess-Token header.
@@ -215,7 +214,6 @@ class Actions_Controller extends Abstract_REST_Controller {
 	 * Validate users array
 	 *
 	 * @param mixed $value The value to validate.
-	 * @return bool
 	 */
 	public function validate_users_array( $value ): bool {
 		if ( ! is_array( $value ) ) {
@@ -234,9 +232,9 @@ class Actions_Controller extends Abstract_REST_Controller {
 	/**
 	 * Sanitize user data
 	 *
-	 * @param array $user Raw user data.
+	 * @param array<string, mixed> $user Raw user data.
 	 *
-	 * @return array|null Sanitized user data or null if invalid.
+	 * @return array<string, mixed>|null Sanitized user data or null if invalid.
 	 */
 	private function sanitize_user_data( array $user ): ?array {
 
@@ -273,7 +271,6 @@ class Actions_Controller extends Abstract_REST_Controller {
 	 * Callback to add deduplicated users.
 	 *
 	 * @param \WP_REST_Request $request Request object.
-	 * @return \WP_REST_Response
 	 */
 	public function add_deduplicated_users( WP_REST_Request $request ): WP_REST_Response {
 
@@ -319,7 +316,7 @@ class Actions_Controller extends Abstract_REST_Controller {
 	 * @param string   $site_name Site name.
 	 * @param string   $site_url Site URL.
 	 *
-	 * @return array
+	 * @return array<string, mixed> Prepared user data.
 	 */
 	private function prepare_user_data( \WP_User $user, string $site_name, string $site_url ): array {
 		return [
@@ -336,10 +333,10 @@ class Actions_Controller extends Abstract_REST_Controller {
 	/**
 	 * Send batch of users to governing site
 	 *
-	 * @param array  $users_batch Users to send.
-	 * @param string $governing_site_url Governing site URL.
+	 * @param array<int, array<string, mixed>> $users_batch Users to send.
+	 * @param string                           $governing_site_url Governing site URL.
 	 *
-	 * @return array|\WP_Error Response or error.
+	 * @return array<string, mixed>|\WP_Error Response or error.
 	 */
 	private function send_users_batch( array $users_batch, string $governing_site_url ): array|\WP_Error {
 		$body = wp_json_encode( [ 'users' => $users_batch ] );
@@ -447,11 +444,11 @@ class Actions_Controller extends Abstract_REST_Controller {
 	/**
 	 * Make remote request to brand site
 	 *
-	 * @param string $site_url Site URL.
-	 * @param string $api_key API key.
-	 * @param array  $query_params Query parameters.
+	 * @param string               $site_url Site URL.
+	 * @param string               $api_key API key.
+	 * @param array<string, mixed> $query_params Query parameters.
 	 *
-	 * @return array|\WP_Error Response data or error.
+	 * @return array<string, mixed>|\WP_Error Response data or error.
 	 */
 	private function make_brand_site_request( string $site_url, string $api_key, array $query_params ) {
 
@@ -501,8 +498,6 @@ class Actions_Controller extends Abstract_REST_Controller {
 	 * Get users profile request data from all brand sites.
 	 *
 	 * @param \WP_REST_Request $request Request object.
-	 *
-	 * @return \WP_REST_Response
 	 */
 	public function get_profile_requests( WP_REST_Request $request ): WP_REST_Response {
 
@@ -729,7 +724,7 @@ class Actions_Controller extends Abstract_REST_Controller {
 	 *
 	 * @param string $status Status filter.
 	 * @param string $search_query Search query.
-	 * @return array Array with 'sql' and 'params' keys.
+	 * @return array{sql: string, params: array<int, string>} Array with 'sql' and 'params' keys.
 	 */
 	private function build_profile_requests_where_clause( string $status, string $search_query ): array {
 
@@ -758,7 +753,6 @@ class Actions_Controller extends Abstract_REST_Controller {
 	 * Get brand site profile requests from current site database.
 	 *
 	 * @param \WP_REST_Request $request Request object.
-	 * @return \WP_REST_Response
 	 */
 	public function get_brand_site_profile_requests( WP_REST_Request $request ): WP_REST_Response {
 
@@ -833,8 +827,6 @@ class Actions_Controller extends Abstract_REST_Controller {
 	 * Send single user to governing site for deduplication.
 	 *
 	 * @param int $user_id User ID.
-	 *
-	 * @return void
 	 */
 	public function send_single_user_for_deduplication( int $user_id ): void {
 
@@ -854,8 +846,6 @@ class Actions_Controller extends Abstract_REST_Controller {
 
 	/**
 	 * Cleanup deduplicated users from disconnected sites.
-	 *
-	 * @return \WP_REST_Response
 	 */
 	public function cleanup_deduplicated_users(): WP_REST_Response {
 		global $wpdb;
@@ -868,20 +858,13 @@ class Actions_Controller extends Abstract_REST_Controller {
 
 		// Build list of connected site URLs.
 		foreach ( $oneaccess_sites as $site_config ) {
-
-			// Skip duplicate or invalid sites.
-			if ( empty( $site_config['url'] ) || in_array( $site_config['url'], $processed_sites, true ) ) {
-				if ( ! empty( $site_config['url'] ) ) {
-					$processed_sites[] = $site_config['url'];
-				}
+			// Skip invalid site configs.
+			if ( empty( $site_config['url'] ) || isset( $processed_sites[ $site_config['url'] ] ) ) {
 				continue;
 			}
 
-			if ( empty( $site_config['url'] ) ) {
-				continue;
-			}
-
-			$connected_site_urls[] = trailingslashit( esc_url_raw( $site_config['url'] ) );
+			$processed_sites[ $site_config['url'] ] = true;
+			$connected_site_urls[]                  = trailingslashit( esc_url_raw( $site_config['url'] ) );
 		}
 
 		// If no connected sites, we can't proceed safely.
@@ -991,8 +974,6 @@ class Actions_Controller extends Abstract_REST_Controller {
 
 	/**
 	 * Rebuild deduplicated users index.
-	 *
-	 * @return \WP_REST_Response
 	 */
 	public function rebuild_deduplicated_users_index(): WP_REST_Response {
 
@@ -1058,8 +1039,6 @@ class Actions_Controller extends Abstract_REST_Controller {
 
 	/**
 	 * Rebuild brand sites index on current site.
-	 *
-	 * @return \WP_REST_Response
 	 */
 	public function rebuild_brand_sites_index(): WP_REST_Response {
 
