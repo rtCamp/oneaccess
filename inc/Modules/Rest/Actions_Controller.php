@@ -251,6 +251,7 @@ class Actions_Controller extends Abstract_REST_Controller {
 
 		$sanitized_user = [
 			'user_id'    => isset( $user['user_id'] ) ? absint( $user['user_id'] ) : 0,
+			'username'   => sanitize_user( $user['username'] ?? '' ),
 			'email'      => sanitize_email( $user['email'] ?? '' ),
 			'first_name' => sanitize_text_field( $user['first_name'] ?? '' ),
 			'last_name'  => sanitize_text_field( $user['last_name'] ?? '' ),
@@ -321,6 +322,7 @@ class Actions_Controller extends Abstract_REST_Controller {
 	private function prepare_user_data( \WP_User $user, string $site_name, string $site_url ): array {
 		return [
 			'user_id'    => $user->ID,
+			'username'   => $user->user_login,
 			'email'      => $user->user_email,
 			'first_name' => get_user_meta( $user->ID, 'first_name', true ),
 			'last_name'  => get_user_meta( $user->ID, 'last_name', true ),

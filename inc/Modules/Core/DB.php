@@ -238,6 +238,7 @@ class DB implements Registrable {
 			'site_name' => $user['site_name'] ?? '',
 			'site_url'  => $user['site_url'] ?? '',
 			'user_id'   => $user['user_id'] ?? '',
+			'username'  => $user['username'] ?? '',
 			'roles'     => $user['roles'] ?? [],
 		];
 	}
@@ -271,6 +272,7 @@ class DB implements Registrable {
 				$site_info['site_name'] = $new_site_info['site_name'];
 				$site_info['user_id']   = $new_site_info['user_id'];
 				$site_info['roles']     = $new_site_info['roles'];
+				$site_info['username']  = $new_site_info['username'] ?? '';
 				break;
 			}
 		}
@@ -684,6 +686,7 @@ class DB implements Registrable {
 		string $site_url,
 		int $user_id,
 		array $roles,
+		string $username = '',
 	): int|false {
 
 		// get user by email.
@@ -721,6 +724,7 @@ class DB implements Registrable {
 					'site_url'  => $site_url,
 					'user_id'   => $user_id,
 					'roles'     => $roles,
+					'username'  => $username,
 				];
 
 				$response = $wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.DirectQuery -- safe usage.
