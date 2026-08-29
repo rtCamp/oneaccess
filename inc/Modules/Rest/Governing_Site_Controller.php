@@ -827,6 +827,7 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 				$site_url['url'] ?? '',
 				$user_id,
 				[ $user_role ],
+				$username,
 			);
 		}
 
@@ -1200,12 +1201,24 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 		// Process users data - decode sites_info.
 		$processed_users = [];
 		foreach ( $users as $user ) {
+			$sites_info = json_decode( $user->sites_info, true );
+			$username   = '';
+			if ( is_array( $sites_info ) ) {
+				foreach ( $sites_info as $site_info ) {
+					if ( ! empty( $site_info['username'] ) ) {
+						$username = $site_info['username'];
+						break;
+					}
+				}
+			}
+
 			$user_data = [
 				'id'         => $user->id,
 				'email'      => $user->email,
+				'username'   => $username,
 				'first_name' => $user->first_name,
 				'last_name'  => $user->last_name,
-				'sites_info' => json_decode( $user->sites_info, true ),
+				'sites_info' => $sites_info,
 				'created_at' => $user->created_at,
 				'updated_at' => $user->updated_at,
 			];
