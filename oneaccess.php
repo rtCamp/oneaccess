@@ -17,7 +17,9 @@
  * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
  * Text Domain:       oneaccess
  * Domain Path:       /languages
+ * x-release-please-start-version
  * Version:           1.1.3
+ * x-release-please-end
  * Requires PHP:      8.2
  * Requires at least: 6.8
  * Tested up to:      6.9
@@ -42,7 +44,7 @@ function constants(): void {
 	/**
 	 * Version of the plugin.
 	 */
-	define( 'ONEACCESS_VERSION', '1.1.3' );
+	define( 'ONEACCESS_VERSION', '1.1.3' ); // x-release-please-version.
 
 	/**
 	 * Root path to the plugin directory.
