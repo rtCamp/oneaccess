@@ -18,7 +18,7 @@
  * Text Domain:       oneaccess
  * Domain Path:       /languages
  * x-release-please-start-version
- * Version:           1.1.3
+ * Version:           2.0.0
  * x-release-please-end
  * Requires PHP:      8.2
  * Requires at least: 6.8
@@ -44,7 +44,7 @@ function constants(): void {
 	/**
 	 * Version of the plugin.
 	 */
-	define( 'ONEACCESS_VERSION', '1.1.3' ); // x-release-please-version.
+	define( 'ONEACCESS_VERSION', '2.0.0' ); // x-release-please-version.
 
 	/**
 	 * Root path to the plugin directory.
