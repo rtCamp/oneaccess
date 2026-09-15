@@ -92,5 +92,13 @@
 		"serialize-javascript@<7.0.4": "^7.0.4",
 		"uuid@<11.1.1": "^11.1.1",
 		"webpack-dev-server@<5.2.1": "^5.2.1"
+	},
+	"allowScripts": {
+		"@parcel/watcher@2.6.0": true,
+		"lefthook@2.1.14": true,
+		"unrs-resolver@1.12.2": true,
+		"core-js": false,
+		"core-js-pure": false,
+		"fs-ext-extra-prebuilt": false
 	}
 }
