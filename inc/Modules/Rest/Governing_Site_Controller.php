@@ -20,8 +20,6 @@ use WP_REST_Server;
 class Governing_Site_Controller extends Abstract_REST_Controller {
 	/**
 	 * Minimum number of characters accepted for a new user's password.
-	 *
-	 * Mirrors the floor the admin UI enforces via its strength meter.
 	 */
 	public const MIN_PASSWORD_LENGTH = 8;
 
@@ -1130,7 +1128,6 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 			$role = 'subscriber';
 		}
 
-		// Split on the first run of whitespace; a single-word name simply has no last name.
 		$name_parts = preg_split( '/\s+/', trim( $full_name ), 2 ) ?: [];
 
 		// Set the user's full name and role.
@@ -1489,11 +1486,6 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 			$response_code = wp_remote_retrieve_response_code( $response );
 			$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
 
-			/*
-			 * A body that will not decode means something other than the REST response was written to
-			 * the stream, typically a PHP notice raised after the user was already created. Report it
-			 * separately so it is not mistaken for the site rejecting the request.
-			 */
 			if ( ! is_array( $response_body ) ) {
 				$error_log[] = [
 					'site_name' => $site_name,

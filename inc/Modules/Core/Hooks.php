@@ -70,10 +70,6 @@ class Hooks implements Registrable {
 	/**
 	 * Allow outbound requests to the configured OneAccess sites.
 	 *
-	 * `wp_safe_remote_*()` rejects hosts that resolve to a private or loopback address, which
-	 * blocks site-to-site traffic in local and internally routed environments. Only the hosts
-	 * OneAccess is configured to talk to are allowed; everything else keeps the default check.
-	 *
 	 * @internal Hook callback
 	 *
 	 * @param bool   $is_external Whether the host is considered external.
