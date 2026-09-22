@@ -3,28 +3,27 @@
 #oneaccess-settings-page,
 #oneaccess-manage-user {
 
-	&:has(.components-snackbar-list) {
-
-		.components-snackbar-list {
-			position: fixed;
-			bottom: 20px;
-			right: 20px;
-			z-index: 1000000;
-			align-items: flex-end;
-			justify-content: flex-end;
-			display: flex;
-			flex-direction: column;
-		}
+	/* Pin toasts bottom-right, from a list or standalone. */
+	.components-snackbar-list,
+	.components-snackbar {
+		position: fixed;
+		bottom: 20px;
+		right: 20px;
+		z-index: 1000000;
+		width: auto;
 	}
 
-	&:not(:has(.components-snackbar-list)) {
+	.components-snackbar-list {
+		align-items: flex-end;
+		justify-content: flex-end;
+		display: flex;
+		flex-direction: column;
 
+		/* Snackbars in a list are laid out by the list itself. */
 		.components-snackbar {
-			position: fixed;
-			bottom: 20px;
-			right: 20px;
-			z-index: 1000000;
-			width: auto;
+			position: static;
+			bottom: auto;
+			right: auto;
 		}
 	}
 
@@ -41,8 +40,6 @@
 		background-color: #e11d1d;
 		color: #fff;
 	}
-
-
 }
 
 .toplevel_page_oneaccess {
@@ -51,7 +48,6 @@
 		pointer-events: none;
 	}
 }
-
 
 body {
 
