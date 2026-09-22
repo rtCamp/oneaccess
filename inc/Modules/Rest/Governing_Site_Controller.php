@@ -417,11 +417,10 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 			);
 		}
 
-		$response_data        = [];
-		$oneaccess_sites_info = Settings::get_shared_sites();
-		$processed_sites      = [];
-		$error_log            = [];
-		$user_delete_results  = [];
+		$response_data       = [];
+		$processed_sites     = [];
+		$error_log           = [];
+		$user_delete_results = [];
 
 		foreach ( $sites as $site ) {
 
@@ -433,8 +432,9 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 				continue;
 			}
 
-			$request_url = $site['site_url'] . '/wp-json/' . self::NAMESPACE . '/delete-user';
-			$api_key     = $oneaccess_sites_info[ $site['site_url'] ]['api_key'] ?? '';
+			$site_info   = Settings::get_shared_site_by_url( $site['site_url'] );
+			$request_url = untrailingslashit( $site_info['url'] ?? $site['site_url'] ) . '/wp-json/' . self::NAMESPACE . '/delete-user';
+			$api_key     = $site_info['api_key'] ?? '';
 			$response    = wp_safe_remote_request(
 				$request_url,
 				[
@@ -445,6 +445,7 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 					],
 					'headers' => [
 						'X-OneAccess-Token' => $api_key,
+						'Origin'            => get_site_url(),
 					],
 				]
 			);
