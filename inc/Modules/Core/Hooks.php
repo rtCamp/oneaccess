@@ -85,6 +85,6 @@ class Hooks implements Registrable {
 			}
 		}
 
-		return false;
+		return (bool) $is_external;
 	}
 }
