@@ -76,9 +76,6 @@ class Hooks implements Registrable {
 	 * @param string $host        Host name of the request.
 	 */
 	public function allow_oneaccess_host( $is_external, $host ): bool {
-		if ( ! empty( $is_external ) ) {
-			return true;
-		}
 
 		$urls   = array_column( Settings::get_shared_sites(), 'url' );
 		$urls[] = (string) Settings::get_parent_site_url();
