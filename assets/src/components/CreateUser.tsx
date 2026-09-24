@@ -201,6 +201,7 @@ const CreateUser = ( {
 				message?: string;
 				data?: {
 					response_data?: CreateUserResult[];
+					error_log?: { site_name?: string; message?: string }[];
 				};
 			};
 			if ( ! data.success ) {
@@ -216,7 +217,18 @@ const CreateUser = ( {
 				return;
 			}
 
-			const results = data?.data?.response_data || [];
+			// Per-site failures are only reported in `error_log`, so merge them in as well.
+			const results: CreateUserResult[] = [
+				...( data?.data?.response_data || [] ),
+				...( data?.data?.error_log || [] ).map( ( failure ) => ( {
+					status: 'error' as const,
+					site: failure.site_name ?? '',
+					message:
+						failure.message ??
+						__( 'Failed to create user.', 'oneaccess' ),
+				} ) ),
+			];
+
 			const newNotices = results.map(
 				( result: CreateUserResult, index: number ) => ( {
 					id: `notice-${ Date.now() }-${ index }`,

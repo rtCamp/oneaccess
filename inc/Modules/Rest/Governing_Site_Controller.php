@@ -19,6 +19,11 @@ use WP_REST_Server;
  */
 class Governing_Site_Controller extends Abstract_REST_Controller {
 	/**
+	 * Minimum number of characters accepted for a new user's password.
+	 */
+	public const MIN_PASSWORD_LENGTH = 8;
+
+	/**
 	 * {@inheritDoc}
 	 */
 	public function register_routes(): void {
@@ -224,9 +229,8 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 						'sanitize_callback' => 'sanitize_text_field',
 					],
 					'password' => [
-						'required'          => true,
-						'type'              => 'string',
-						'sanitize_callback' => 'sanitize_text_field',
+						'required' => true,
+						'type'     => 'string',
 					],
 					'sites'    => [
 						'required' => true,
@@ -417,11 +421,10 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 			);
 		}
 
-		$response_data        = [];
-		$oneaccess_sites_info = Settings::get_shared_sites();
-		$processed_sites      = [];
-		$error_log            = [];
-		$user_delete_results  = [];
+		$response_data       = [];
+		$processed_sites     = [];
+		$error_log           = [];
+		$user_delete_results = [];
 
 		foreach ( $sites as $site ) {
 
@@ -433,8 +436,9 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 				continue;
 			}
 
-			$request_url = $site['site_url'] . '/wp-json/' . self::NAMESPACE . '/delete-user';
-			$api_key     = $oneaccess_sites_info[ $site['site_url'] ]['api_key'] ?? '';
+			$site_info   = Settings::get_shared_site_by_url( $site['site_url'] );
+			$request_url = untrailingslashit( $site_info['url'] ?? $site['site_url'] ) . '/wp-json/' . self::NAMESPACE . '/delete-user';
+			$api_key     = $site_info['api_key'] ?? '';
 			$response    = wp_safe_remote_request(
 				$request_url,
 				[
@@ -445,6 +449,7 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 					],
 					'headers' => [
 						'X-OneAccess-Token' => $api_key,
+						'Origin'            => get_site_url(),
 					],
 				]
 			);
@@ -692,14 +697,29 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 		$email     = sanitize_email( $request->get_param( 'email' ) );
 		$username  = sanitize_text_field( $request->get_param( 'username' ) );
 		$full_name = sanitize_text_field( $request->get_param( 'fullName' ) );
-		$password  = sanitize_text_field( $request->get_param( 'password' ) );
-		$sites     = $request->get_param( 'sites' );
+		// Passwords are hashed, never rendered or queried, so they must reach wp_create_user() verbatim.
+		$password = (string) $request->get_param( 'password' );
+		$sites    = $request->get_param( 'sites' );
 
 		if ( empty( $email ) || empty( $username ) || empty( $full_name ) || empty( $password ) || empty( $sites ) ) {
 			return new \WP_REST_Response(
 				[
 					'success' => false,
 					'message' => __( 'Email, username, full name, password and sites are required.', 'oneaccess' ),
+				],
+				400
+			);
+		}
+
+		if ( strlen( $password ) < self::MIN_PASSWORD_LENGTH ) {
+			return new \WP_REST_Response(
+				[
+					'success' => false,
+					'message' => sprintf(
+						/* translators: %d is the minimum number of characters */
+						__( 'Password must be at least %d characters long.', 'oneaccess' ),
+						self::MIN_PASSWORD_LENGTH
+					),
 				],
 				400
 			);
@@ -1027,9 +1047,10 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 	 * @param \WP_REST_Request $request The REST request object.
 	 */
 	public function create_user( \WP_REST_Request $request ): \WP_REST_Response {
-		$username  = sanitize_user( $request->get_param( 'username' ) );
-		$email     = sanitize_email( $request->get_param( 'email' ) );
-		$password  = sanitize_text_field( $request->get_param( 'password' ) );
+		$username = sanitize_user( $request->get_param( 'username' ) );
+		$email    = sanitize_email( $request->get_param( 'email' ) );
+		// Passwords are hashed, never rendered or queried, so they must reach wp_create_user() verbatim.
+		$password  = (string) $request->get_param( 'password' );
 		$full_name = sanitize_text_field( $request->get_param( 'full_name' ) );
 		$role      = sanitize_text_field( $request->get_param( 'role' ) );
 
@@ -1038,6 +1059,20 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 				[
 					'success' => false,
 					'message' => __( 'Username, email, full name and password are required.', 'oneaccess' ),
+				],
+				400
+			);
+		}
+
+		if ( strlen( $password ) < self::MIN_PASSWORD_LENGTH ) {
+			return new \WP_REST_Response(
+				[
+					'success' => false,
+					'message' => sprintf(
+						/* translators: %d is the minimum number of characters */
+						__( 'Password must be at least %d characters long.', 'oneaccess' ),
+						self::MIN_PASSWORD_LENGTH
+					),
 				],
 				400
 			);
@@ -1093,14 +1128,16 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 			$role = 'subscriber';
 		}
 
+		$name_parts = preg_split( '/\s+/', trim( $full_name ), 2 ) ?: [];
+
 		// Set the user's full name and role.
 		wp_update_user(
 			[
 				'ID'            => $user_id,
 				'display_name'  => $full_name,
 				'user_nicename' => sanitize_title( $full_name ),
-				'first_name'    => explode( ' ', $full_name )[0] ?: '',
-				'last_name'     => explode( ' ', $full_name )[1] ?: '',
+				'first_name'    => $name_parts[0] ?? '',
+				'last_name'     => $name_parts[1] ?? '',
 				'role'          => $role ?: 'subscriber',
 			]
 		);
@@ -1364,6 +1401,19 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 				400
 			);
 		}
+		if ( strlen( (string) $userdata['password'] ) < self::MIN_PASSWORD_LENGTH ) {
+			return new \WP_REST_Response(
+				[
+					'success' => false,
+					'message' => sprintf(
+						/* translators: %d is the minimum number of characters */
+						__( 'Password must be at least %d characters long.', 'oneaccess' ),
+						self::MIN_PASSWORD_LENGTH
+					),
+				],
+				400
+			);
+		}
 		if ( ! isset( $userdata['fullName'] ) || empty( $userdata['fullName'] ) ) {
 			return new \WP_REST_Response(
 				[
@@ -1433,7 +1483,22 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 				continue;
 			}
 
+			$response_code = wp_remote_retrieve_response_code( $response );
 			$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+			if ( ! is_array( $response_body ) ) {
+				$error_log[] = [
+					'site_name' => $site_name,
+					'message'   => sprintf(
+						/* translators: 1: site name, 2: HTTP status code */
+						__( 'Unreadable response from site %1$s (HTTP %2$d). The user may have been created there; please verify before retrying.', 'oneaccess' ),
+						$site_name,
+						(int) $response_code
+					),
+				];
+				continue;
+			}
+
 			if ( empty( $response_body['success'] ) ) {
 				$error_log[] = [
 					'site_name' => $site_name,

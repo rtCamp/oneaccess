@@ -37,6 +37,9 @@ class Hooks implements Registrable {
 	 * {@inheritDoc}
 	 */
 	public function register_hooks(): void {
+		// Needed on both site types, so it must come before the consumer check below.
+		add_filter( 'http_request_host_is_external', [ $this, 'allow_oneaccess_host' ], 10, 2 );
+
 		// Early return if this is not a consumer site.
 		if ( ! Settings::is_consumer_site() ) {
 			return;
@@ -62,5 +65,26 @@ class Hooks implements Registrable {
 	 */
 	public function user_deduplication(): void {
 		$this->actions_controller->send_users_for_deduplication();
+	}
+
+	/**
+	 * Allow outbound requests to the configured OneAccess sites.
+	 *
+	 * @internal Hook callback
+	 *
+	 * @param bool   $is_external Whether the host is considered external.
+	 * @param string $host        Host name of the request.
+	 */
+	public function allow_oneaccess_host( $is_external, $host ): bool {
+		$urls   = array_column( Settings::get_shared_sites(), 'url' );
+		$urls[] = (string) Settings::get_parent_site_url();
+
+		foreach ( $urls as $url ) {
+			if ( ! empty( $url ) && wp_parse_url( $url, PHP_URL_HOST ) === $host ) {
+				return true;
+			}
+		}
+
+		return (bool) $is_external;
 	}
 }
