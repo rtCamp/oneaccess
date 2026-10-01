@@ -282,9 +282,6 @@ final class Settings implements Registrable {
 	/**
 	 * Normalize a site URL for comparison.
 	 *
-	 * A site reports itself via `get_site_url()`, whose scheme and trailing slash can differ
-	 * from the URL configured on the governing site, so strip both before comparing.
-	 *
 	 * @param string $site_url The site URL.
 	 */
 	private static function normalize_site_url( string $site_url ): string {

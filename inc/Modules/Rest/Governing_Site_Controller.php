@@ -697,9 +697,8 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 		$email     = sanitize_email( $request->get_param( 'email' ) );
 		$username  = sanitize_text_field( $request->get_param( 'username' ) );
 		$full_name = sanitize_text_field( $request->get_param( 'fullName' ) );
-		// Passwords are hashed, never rendered or queried, so they must reach wp_create_user() verbatim.
-		$password = (string) $request->get_param( 'password' );
-		$sites    = $request->get_param( 'sites' );
+		$password  = (string) $request->get_param( 'password' );
+		$sites     = $request->get_param( 'sites' );
 
 		if ( empty( $email ) || empty( $username ) || empty( $full_name ) || empty( $password ) || empty( $sites ) ) {
 			return new \WP_REST_Response(
@@ -1047,9 +1046,8 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 	 * @param \WP_REST_Request $request The REST request object.
 	 */
 	public function create_user( \WP_REST_Request $request ): \WP_REST_Response {
-		$username = sanitize_user( $request->get_param( 'username' ) );
-		$email    = sanitize_email( $request->get_param( 'email' ) );
-		// Passwords are hashed, never rendered or queried, so they must reach wp_create_user() verbatim.
+		$username  = sanitize_user( $request->get_param( 'username' ) );
+		$email     = sanitize_email( $request->get_param( 'email' ) );
 		$password  = (string) $request->get_param( 'password' );
 		$full_name = sanitize_text_field( $request->get_param( 'full_name' ) );
 		$role      = sanitize_text_field( $request->get_param( 'role' ) );
