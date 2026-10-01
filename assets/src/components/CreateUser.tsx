@@ -1,35 +1,35 @@
 /**
  * WordPress dependencies
  */
-import { useState, useEffect, useCallback } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
 import {
-	Card,
-	CardHeader,
-	CardBody,
-	TextControl,
-	SelectControl,
 	Button,
-	Modal,
+	Card,
+	CardBody,
+	CardHeader,
 	CheckboxControl,
-	Notice,
+	Dashicon,
 	__experimentalGrid as Grid,
 	__experimentalHStack as HStack,
-	__experimentalVStack as VStack,
-	Dashicon,
+	Icon,
+	Modal,
+	Notice,
+	SelectControl,
 	Snackbar,
 	SnackbarList,
-	Icon,
+	TextControl,
+	__experimentalVStack as VStack,
 } from '@wordpress/components';
+import { useCallback, useEffect, useState } from '@wordpress/element';
+import { __ } from '@wordpress/i18n';
 
 /**
  * Internal dependencies
  */
 import {
-	isValidEmail,
 	checkPasswordStrength,
-	strengthWidths,
 	getStrengthColor,
+	isValidEmail,
+	strengthWidths,
 	type StrengthLevel,
 } from '../js/utils';
 
@@ -201,6 +201,7 @@ const CreateUser = ( {
 				message?: string;
 				data?: {
 					response_data?: CreateUserResult[];
+					error_log?: { site_name?: string; message?: string }[];
 				};
 			};
 			if ( ! data.success ) {
@@ -216,7 +217,17 @@ const CreateUser = ( {
 				return;
 			}
 
-			const results = data?.data?.response_data || [];
+			const results: CreateUserResult[] = [
+				...( data?.data?.response_data || [] ),
+				...( data?.data?.error_log || [] ).map( ( failure ) => ( {
+					status: 'error' as const,
+					site: failure.site_name ?? '',
+					message:
+						failure.message ??
+						__( 'Failed to create user.', 'oneaccess' ),
+				} ) ),
+			];
+
 			const newNotices = results.map(
 				( result: CreateUserResult, index: number ) => ( {
 					id: `notice-${ Date.now() }-${ index }`,

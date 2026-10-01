@@ -112,8 +112,9 @@ abstract class Abstract_REST_Controller extends \WP_REST_Controller implements R
 			return false;
 		}
 
-		// if token is valid and request is from different domain then check if it matches governing site url.
-		return self::is_same_domain( $governing_site_url, $request_origin ) || false !== strpos( $user_agent, $governing_site_url );
+		$governing_host = (string) wp_parse_url( $governing_site_url, PHP_URL_HOST );
+
+		return self::is_same_domain( $governing_site_url, $request_origin ) || ( '' !== $governing_host && false !== strpos( $user_agent, $governing_host ) );
 	}
 
 	/**

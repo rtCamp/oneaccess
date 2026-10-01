@@ -31,6 +31,14 @@ class Profile_Request implements Registrable {
 		add_action( 'personal_options_update', [ $this, 'store_profile_update_request' ] );
 		add_action( 'edit_user_profile_update', [ $this, 'store_profile_update_request' ] );
 
+		// the current user is not available until pluggable.php has loaded, so defer.
+		add_action( 'init', [ $this, 'register_brand_admin_hooks' ] );
+	}
+
+	/**
+	 * Register the hooks that only apply to brand admins.
+	 */
+	public function register_brand_admin_hooks(): void {
 		// get current user.
 		$current_user = wp_get_current_user();
 
