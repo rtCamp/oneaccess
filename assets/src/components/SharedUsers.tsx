@@ -70,12 +70,14 @@ interface SharedUser {
 		role: string;
 		roles: string[] | Record< string, string >;
 		user_id: number;
+		username?: string;
 	} >;
 	sites_info: Array< {
 		site_url: string;
 		site_name: string;
 		roles: string[] | Record< string, string >;
 		user_id: number;
+		username?: string;
 	} >;
 	all_roles: string[];
 	all_sites: string[];
@@ -236,7 +238,7 @@ const SharedUsers = ( {
 			const transformedUsers: SharedUser[] = data.users.map(
 				( user ) => ( {
 					id: user.id,
-					username: user.email.split( '@' )[ 0 ] ?? '', // Fallback username from email
+					username: user.username || ( user.email.split( '@' )[ 0 ] ?? '' ), // Fallback username from email
 					email: user.email,
 					full_name:
 						user.full_name ||
@@ -250,6 +252,7 @@ const SharedUsers = ( {
 							site_name: site.site_name,
 							name: site.site_name,
 							url: site.site_url,
+							username: site.username || '',
 							// Get the first role from roles array, or handle object structure
 							role: ( (): string => {
 								if ( Array.isArray( site.roles ) ) {
