@@ -778,7 +778,8 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 						'role'      => $user_role,
 					],
 					'headers' => [
-						'X-OneAccess-Token' => $api_key,
+						'X-OneAccess-Token'    => $api_key,
+						'X-OneAccess-Site-URL' => get_site_url(),
 					],
 				]
 			);
@@ -972,7 +973,8 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 						'role'     => $new_role,
 					],
 					'headers' => [
-						'X-OneAccess-Token' => $api_key,
+						'X-OneAccess-Token'    => $api_key,
+						'X-OneAccess-Site-URL' => get_site_url(),
 					],
 				]
 			);
@@ -1464,7 +1466,8 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 						'role'      => $userdata['role'] ?? 'subscriber',
 					],
 					'headers' => [
-						'X-OneAccess-Token' => $api_key,
+						'X-OneAccess-Token'    => $api_key,
+						'X-OneAccess-Site-URL' => get_site_url(),
 					],
 				]
 			);
