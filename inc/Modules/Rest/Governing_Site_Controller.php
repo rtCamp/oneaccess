@@ -481,7 +481,7 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 			}
 
 			$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
-			if ( ! $response_body['success'] ) {
+			if ( ! is_array( $response_body ) || empty( $response_body['success'] ) ) {
 				$error_log[] = [
 					'site_name' => $site['site_url'] ?? '',
 					'message'   => $response_body['message'] ?? __( 'Failed to delete user from site.', 'oneaccess' ),
@@ -710,18 +710,9 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 			);
 		}
 
-		if ( strlen( $password ) < self::MIN_PASSWORD_LENGTH ) {
-			return new \WP_REST_Response(
-				[
-					'success' => false,
-					'message' => sprintf(
-						/* translators: %d is the minimum number of characters */
-						__( 'Password must be at least %d characters long.', 'oneaccess' ),
-						self::MIN_PASSWORD_LENGTH
-					),
-				],
-				400
-			);
+		$password_error = self::validate_password( $password );
+		if ( null !== $password_error ) {
+			return $password_error;
 		}
 
 		// Validate sites.
@@ -812,7 +803,7 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 
 			$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
 
-			if ( ! $response_body['success'] ) {
+			if ( ! is_array( $response_body ) || empty( $response_body['success'] ) ) {
 				$error_log[] = [
 					'site_name' => $site_url['url'] ?? '',
 					'message'   => $response_body['message'] ?? __( 'Failed to add user to site.', 'oneaccess' ),
@@ -1007,7 +998,7 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 
 			$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
 
-			if ( ! $response_body['success'] ) {
+			if ( ! is_array( $response_body ) || empty( $response_body['success'] ) ) {
 				$error_log[] = [
 					'site_name' => $site_url,
 					'message'   => $response_body['message'] ?? __( 'Failed to update user role on site.', 'oneaccess' ),
@@ -1064,18 +1055,9 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 			);
 		}
 
-		if ( strlen( $password ) < self::MIN_PASSWORD_LENGTH ) {
-			return new \WP_REST_Response(
-				[
-					'success' => false,
-					'message' => sprintf(
-						/* translators: %d is the minimum number of characters */
-						__( 'Password must be at least %d characters long.', 'oneaccess' ),
-						self::MIN_PASSWORD_LENGTH
-					),
-				],
-				400
-			);
+		$password_error = self::validate_password( $password );
+		if ( null !== $password_error ) {
+			return $password_error;
 		}
 
 		if ( ! is_email( $email ) ) {
@@ -1401,18 +1383,9 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 				400
 			);
 		}
-		if ( strlen( (string) $userdata['password'] ) < self::MIN_PASSWORD_LENGTH ) {
-			return new \WP_REST_Response(
-				[
-					'success' => false,
-					'message' => sprintf(
-						/* translators: %d is the minimum number of characters */
-						__( 'Password must be at least %d characters long.', 'oneaccess' ),
-						self::MIN_PASSWORD_LENGTH
-					),
-				],
-				400
-			);
+		$password_error = self::validate_password( (string) $userdata['password'] );
+		if ( null !== $password_error ) {
+			return $password_error;
 		}
 		if ( ! isset( $userdata['fullName'] ) || empty( $userdata['fullName'] ) ) {
 			return new \WP_REST_Response(
@@ -1530,5 +1503,40 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 			],
 			200
 		);
+	}
+
+	/**
+	 * Validate a new user's password.
+	 *
+	 * @param string $password The password to validate.
+	 *
+	 * @return ?\WP_REST_Response Error response if invalid, null otherwise.
+	 */
+	private static function validate_password( string $password ): ?\WP_REST_Response {
+		if ( mb_strlen( $password ) < self::MIN_PASSWORD_LENGTH ) {
+			return new \WP_REST_Response(
+				[
+					'success' => false,
+					'message' => sprintf(
+						/* translators: %d is the minimum number of characters */
+						__( 'Password must be at least %d characters long.', 'oneaccess' ),
+						self::MIN_PASSWORD_LENGTH
+					),
+				],
+				400
+			);
+		}
+
+		if ( str_contains( $password, '\\' ) ) {
+			return new \WP_REST_Response(
+				[
+					'success' => false,
+					'message' => __( 'Passwords cannot contain the "\\" character.', 'oneaccess' ),
+				],
+				400
+			);
+		}
+
+		return null;
 	}
 }

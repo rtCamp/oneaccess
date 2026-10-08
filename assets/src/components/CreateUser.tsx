@@ -186,12 +186,19 @@ const CreateUser = ( {
 			);
 
 			if ( ! response.ok ) {
+				const errorData = ( await response
+					.json()
+					.catch( () => null ) ) as {
+					message?: string;
+				} | null;
 				setNotice( {
 					type: 'error',
-					message: __(
-						'Failed to create user. Please try again later.',
-						'oneaccess'
-					),
+					message:
+						errorData?.message ||
+						__(
+							'Failed to create user. Please try again later.',
+							'oneaccess'
+						),
 				} );
 				throw new Error( 'Failed to create user' );
 			}
