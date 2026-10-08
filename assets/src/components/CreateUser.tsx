@@ -17,7 +17,6 @@ import {
 	__experimentalHStack as HStack,
 	__experimentalVStack as VStack,
 	Dashicon,
-	Snackbar,
 	SnackbarList,
 	Icon,
 } from '@wordpress/components';
@@ -60,6 +59,9 @@ const initialFormState: UserFormData = {
 	role: 'subscriber',
 };
 
+// Id of the general (non per-site) notice within the snackbar list.
+const GENERAL_NOTICE_ID = 'create-user-notice';
+
 const CreateUser = ( {
 	availableSites,
 }: {
@@ -82,12 +84,7 @@ const CreateUser = ( {
 		StrengthLevel | 'default'
 	>( 'default' );
 	const [ userCreationNotices, setUserCreationNotices ] = useState<
-		Array<
-			Omit< React.ComponentProps< typeof Snackbar >, 'children' > & {
-				id: string;
-				content: string;
-			}
-		>
+		Array< { id: string; content: string; className: string } >
 	>( [] );
 
 	const fetchStrongPassword = useCallback( async () => {
@@ -186,14 +183,21 @@ const CreateUser = ( {
 			);
 
 			if ( ! response.ok ) {
+				const errorData = ( await response
+					.json()
+					.catch( () => null ) ) as {
+					message?: string;
+				} | null;
 				setNotice( {
 					type: 'error',
-					message: __(
-						'Failed to create user. Please try again later.',
-						'oneaccess'
-					),
+					message:
+						errorData?.message ||
+						__(
+							'Failed to create user. Please try again later.',
+							'oneaccess'
+						),
 				} );
-				throw new Error( 'Failed to create user' );
+				return;
 			}
 
 			const data = ( await response.json() ) as {
@@ -201,6 +205,7 @@ const CreateUser = ( {
 				message?: string;
 				data?: {
 					response_data?: CreateUserResult[];
+					error_log?: { site_name?: string; message?: string }[];
 				};
 			};
 			if ( ! data.success ) {
@@ -216,7 +221,17 @@ const CreateUser = ( {
 				return;
 			}
 
-			const results = data?.data?.response_data || [];
+			const results: CreateUserResult[] = [
+				...( data?.data?.response_data || [] ),
+				...( data?.data?.error_log || [] ).map( ( failure ) => ( {
+					status: 'error' as const,
+					site: failure.site_name ?? '',
+					message:
+						failure.message ??
+						__( 'Failed to create user.', 'oneaccess' ),
+				} ) ),
+			];
+
 			const newNotices = results.map(
 				( result: CreateUserResult, index: number ) => ( {
 					id: `notice-${ Date.now() }-${ index }`,
@@ -497,26 +512,32 @@ const CreateUser = ( {
 						</Grid>
 					</form>
 
-					{ notice && notice.message && (
-						<Snackbar
-							className={
-								notice.type === 'error'
-									? 'oneaccess-error-notice'
-									: 'oneaccess-success-notice'
-							}
-							onRemove={ () => setNotice( null ) }
-						>
-							{ notice.message }
-						</Snackbar>
-					) }
-
-					{ userCreationNotices.length > 0 && (
+					{ ( notice?.message || userCreationNotices.length > 0 ) && (
 						<SnackbarList
-							notices={ userCreationNotices }
-							onRemove={ () => {
-								setTimeout( () => {
-									setUserCreationNotices( [] );
-								}, 3000 );
+							notices={ [
+								...( notice?.message
+									? [
+											{
+												id: GENERAL_NOTICE_ID,
+												content: notice.message,
+												className:
+													notice.type === 'error'
+														? 'oneaccess-error-notice'
+														: 'oneaccess-success-notice',
+											},
+									  ]
+									: [] ),
+								...userCreationNotices,
+							] }
+							onRemove={ ( id: string ) => {
+								if ( GENERAL_NOTICE_ID === id ) {
+									setNotice( null );
+									return;
+								}
+
+								setUserCreationNotices( ( current ) =>
+									current.filter( ( item ) => item.id !== id )
+								);
 							} }
 						/>
 					) }

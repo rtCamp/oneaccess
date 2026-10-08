@@ -12,6 +12,7 @@ interface OneAccessSettings {
 	api_key: string;
 	setupUrl: string;
 	siteType: SiteType;
+	siteUrl: string;
 }
 
 export interface OneAccessOnboarding {
