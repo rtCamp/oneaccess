@@ -359,11 +359,8 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 			);
 		}
 
-		// Get the user by email or login.
-		$user = get_user_by( 'login', $username );
-		if ( ! $user ) {
-			$user = get_user_by( 'email', $email );
-		}
+		// Match by email, the identity used across OneAccess; usernames may differ between sites.
+		$user = get_user_by( 'email', $email );
 		if ( ! $user ) {
 			return new \WP_REST_Response(
 				[
@@ -430,11 +427,9 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 
 			// Skip duplicate or invalid sites.
 			if ( empty( $site['site_url'] ) || in_array( $site['site_url'], $processed_sites, true ) ) {
-				if ( ! empty( $site['site_url'] ) ) {
-					$processed_sites[] = $site['site_url'];
-				}
 				continue;
 			}
+			$processed_sites[] = $site['site_url'];
 
 			$site_info = Settings::get_shared_site_by_url( $site['site_url'] );
 			if ( null === $site_info ) {
@@ -449,6 +444,7 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 				continue;
 			}
 
+			$site_name   = ! empty( $site_info['name'] ) ? $site_info['name'] : $site['site_url'];
 			$request_url = $site_info['url'] . '/wp-json/' . self::NAMESPACE . '/delete-user';
 			$api_key     = $site_info['api_key'];
 			$response    = wp_safe_remote_request(
@@ -468,11 +464,11 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 
 			if ( is_wp_error( $response ) ) {
 				$error_log[] = [
-					'site_name' => $site['site_url'] ?? '',
+					'site_name' => $site_name,
 					'message'   => sprintf(
-						/* translators: %s is the site URL */
+						/* translators: %s is the site name */
 						__( 'Error deleting user from site %s.', 'oneaccess' ),
-						esc_html( $site['site_url'] ?? '' )
+						esc_html( $site_name )
 					),
 				];
 				continue;
@@ -481,21 +477,20 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 			$response_code = wp_remote_retrieve_response_code( $response );
 			if ( 200 !== $response_code ) {
 				$error_log[] = [
-					'site_name' => $site['site_url'] ?? '',
+					'site_name' => $site_name,
 					'message'   => sprintf(
-						/* translators: %s is the site URL */
+						/* translators: %s is the site name */
 						__( 'Failed to delete user from site %s.', 'oneaccess' ),
-						esc_html( $site['site_url'] ?? '' )
+						esc_html( $site_name )
 					),
 				];
-				$error_log[] = $response;
 				continue;
 			}
 
 			$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
 			if ( ! is_array( $response_body ) || empty( $response_body['success'] ) ) {
 				$error_log[] = [
-					'site_name' => $site['site_url'] ?? '',
+					'site_name' => $site_name,
 					'message'   => $response_body['message'] ?? __( 'Failed to delete user from site.', 'oneaccess' ),
 				];
 				continue;
@@ -759,11 +754,9 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 
 			// Skip duplicate or invalid sites.
 			if ( empty( $site_url['url'] ) || in_array( $site_url['url'], $processed_sites, true ) ) {
-				if ( ! empty( $site_url['url'] ) ) {
-					$processed_sites[] = $site_url['url'];
-				}
 				continue;
 			}
+			$processed_sites[] = $site_url['url'];
 
 			$api_key     = $oneaccess_sites_info[ $url ]['api_key'] ?? '';
 			$user_role   = $site_url['role'] ?? 'subscriber';
