@@ -1105,7 +1105,7 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 		}
 
 		// Create the user.
-		$user_id = wp_create_user( $username, $password, $email );
+		$user_id = wp_create_user( $username, wp_slash( $password ), $email );
 		if ( is_wp_error( $user_id ) ) {
 			return new \WP_REST_Response(
 				[
