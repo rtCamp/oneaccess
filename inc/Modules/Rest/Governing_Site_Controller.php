@@ -829,14 +829,7 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 				'message' => __( 'User added successfully.', 'oneaccess' ),
 			];
 
-			$first_name = '';
-			$last_name  = '';
-
-			// split full name into first and last name.
-			$name_parts = explode( ' ', $full_name );
-
-			$first_name = $name_parts[0] ?? '';
-			$last_name  = isset( $name_parts[1] ) ? implode( ' ', array_slice( $name_parts, 1 ) ) : '';
+			[ $first_name, $last_name ] = self::split_full_name( $full_name );
 
 			$user_id   = isset( $response_body['data']['user_id'] ) ? absint( $response_body['data']['user_id'] ) : 0;
 			$user_role = isset( $response_body['data']['role'] ) ? sanitize_text_field( $response_body['data']['role'] ) : 'subscriber';
@@ -1122,7 +1115,7 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 			$role = 'subscriber';
 		}
 
-		$name_parts = preg_split( '/\s+/', trim( $full_name ), 2 ) ?: [];
+		[ $first_name, $last_name ] = self::split_full_name( $full_name );
 
 		// Set the user's full name and role.
 		wp_update_user(
@@ -1130,8 +1123,8 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 				'ID'            => $user_id,
 				'display_name'  => $full_name,
 				'user_nicename' => sanitize_title( $full_name ),
-				'first_name'    => $name_parts[0] ?? '',
-				'last_name'     => $name_parts[1] ?? '',
+				'first_name'    => $first_name,
+				'last_name'     => $last_name,
 				'role'          => $role ?: 'subscriber',
 			]
 		);
@@ -1550,5 +1543,18 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 		}
 
 		return null;
+	}
+
+	/**
+	 * Split a full name into first and last name on the first run of whitespace.
+	 *
+	 * @param string $full_name The full name.
+	 *
+	 * @return array{0: string, 1: string} First and last name.
+	 */
+	private static function split_full_name( string $full_name ): array {
+		$name_parts = preg_split( '/\s+/', trim( $full_name ), 2 ) ?: [];
+
+		return [ $name_parts[0] ?? '', $name_parts[1] ?? '' ];
 	}
 }
