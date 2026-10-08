@@ -83,19 +83,13 @@ abstract class Abstract_REST_Controller extends \WP_REST_Controller implements R
 		$token = ! empty( $token ) ? sanitize_text_field( wp_unslash( $token ) ) : '';
 
 		if ( ! empty( $token ) ) {
-			/**
-			 * Origin is absent for server-side requests, so fall back to the
-			 * explicitly-sent site URL header so token auth can still proceed.
-			 */
-			if ( empty( $request_url ) ) {
-				$site_url_header = $request->get_header( 'X-OneAccess-Site-URL' );
-				if ( ! empty( $site_url_header ) ) {
-					$origin         = $this->parse_origin( $site_url_header );
-					$request_origin = $origin['origin'];
-					$parsed_origin  = $origin['parsed'];
-					$request_url    = $origin['url'];
-					$origin_port    = $origin['port'];
-				}
+			$site_url_header = $this->parse_origin( $request->get_header( 'X-OneAccess-Site-URL' ) );
+			if ( ! empty( $site_url_header['url'] ) ) {
+				$origin         = $site_url_header;
+				$request_origin = $origin['origin'];
+				$parsed_origin  = $origin['parsed'];
+				$request_url    = $origin['url'];
+				$origin_port    = $origin['port'];
 			}
 
 			if ( empty( $request_url ) ) {
@@ -112,13 +106,17 @@ abstract class Abstract_REST_Controller extends \WP_REST_Controller implements R
 				return true;
 			}
 
-			// Non-healthcheck requests must match the site already recorded as governing.
+			// Once paired, every request (health-checks included) must come from the recorded governing site.
 			$governing_site_url = Settings::get_parent_site_url();
-			if ( '/' . $this->namespace . '/health-check' !== $request->get_route() ) {
-				return ! empty( $governing_site_url ) ? $this->is_url_from_host( $governing_site_url, $parsed_origin['host'], $origin_port ) : false;
+			if ( ! empty( $governing_site_url ) ) {
+				return $this->is_url_from_host( $governing_site_url, $parsed_origin['host'], $origin_port );
 			}
 
-			// Health-checks bootstrap the governing-site relationship since none is recorded yet.
+			// Only a health-check may bootstrap the governing-site relationship.
+			if ( '/' . $this->namespace . '/health-check' !== $request->get_route() ) {
+				return false;
+			}
+
 			Settings::set_parent_site_url( $request_origin );
 			return true;
 		}

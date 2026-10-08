@@ -197,7 +197,7 @@ const CreateUser = ( {
 							'oneaccess'
 						),
 				} );
-				throw new Error( 'Failed to create user' );
+				return;
 			}
 
 			const data = ( await response.json() ) as {
