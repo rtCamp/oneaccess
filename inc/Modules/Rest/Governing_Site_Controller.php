@@ -436,9 +436,21 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 				continue;
 			}
 
-			$site_info   = Settings::get_shared_site_by_url( $site['site_url'] );
-			$request_url = untrailingslashit( $site_info['url'] ?? $site['site_url'] ) . '/wp-json/' . self::NAMESPACE . '/delete-user';
-			$api_key     = $site_info['api_key'] ?? '';
+			$site_info = Settings::get_shared_site_by_url( $site['site_url'] );
+			if ( null === $site_info ) {
+				$error_log[] = [
+					'site_name' => $site['site_url'],
+					'message'   => sprintf(
+						/* translators: %s is the site URL */
+						__( 'Site %s is not connected to OneAccess.', 'oneaccess' ),
+						esc_html( $site['site_url'] )
+					),
+				];
+				continue;
+			}
+
+			$request_url = $site_info['url'] . '/wp-json/' . self::NAMESPACE . '/delete-user';
+			$api_key     = $site_info['api_key'];
 			$response    = wp_safe_remote_request(
 				$request_url,
 				[
