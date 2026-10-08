@@ -1,35 +1,35 @@
 /**
  * WordPress dependencies
  */
+import { useState, useEffect, useCallback } from '@wordpress/element';
+import { __ } from '@wordpress/i18n';
 import {
-	Button,
 	Card,
-	CardBody,
 	CardHeader,
+	CardBody,
+	TextControl,
+	SelectControl,
+	Button,
+	Modal,
 	CheckboxControl,
-	Dashicon,
+	Notice,
 	__experimentalGrid as Grid,
 	__experimentalHStack as HStack,
-	Icon,
-	Modal,
-	Notice,
-	SelectControl,
+	__experimentalVStack as VStack,
+	Dashicon,
 	Snackbar,
 	SnackbarList,
-	TextControl,
-	__experimentalVStack as VStack,
+	Icon,
 } from '@wordpress/components';
-import { useCallback, useEffect, useState } from '@wordpress/element';
-import { __ } from '@wordpress/i18n';
 
 /**
  * Internal dependencies
  */
 import {
-	checkPasswordStrength,
-	getStrengthColor,
 	isValidEmail,
+	checkPasswordStrength,
 	strengthWidths,
+	getStrengthColor,
 	type StrengthLevel,
 } from '../js/utils';
 
