@@ -17,7 +17,6 @@ import {
 	__experimentalHStack as HStack,
 	__experimentalVStack as VStack,
 	Dashicon,
-	Snackbar,
 	SnackbarList,
 	Icon,
 } from '@wordpress/components';
@@ -60,6 +59,9 @@ const initialFormState: UserFormData = {
 	role: 'subscriber',
 };
 
+// Id of the general (non per-site) notice within the snackbar list.
+const GENERAL_NOTICE_ID = 'create-user-notice';
+
 const CreateUser = ( {
 	availableSites,
 }: {
@@ -82,12 +84,7 @@ const CreateUser = ( {
 		StrengthLevel | 'default'
 	>( 'default' );
 	const [ userCreationNotices, setUserCreationNotices ] = useState<
-		Array<
-			Omit< React.ComponentProps< typeof Snackbar >, 'children' > & {
-				id: string;
-				content: string;
-			}
-		>
+		Array< { id: string; content: string; className: string } >
 	>( [] );
 
 	const fetchStrongPassword = useCallback( async () => {
@@ -515,26 +512,32 @@ const CreateUser = ( {
 						</Grid>
 					</form>
 
-					{ notice && notice.message && (
-						<Snackbar
-							className={
-								notice.type === 'error'
-									? 'oneaccess-error-notice'
-									: 'oneaccess-success-notice'
-							}
-							onRemove={ () => setNotice( null ) }
-						>
-							{ notice.message }
-						</Snackbar>
-					) }
-
-					{ userCreationNotices.length > 0 && (
+					{ ( notice?.message || userCreationNotices.length > 0 ) && (
 						<SnackbarList
-							notices={ userCreationNotices }
-							onRemove={ () => {
-								setTimeout( () => {
-									setUserCreationNotices( [] );
-								}, 3000 );
+							notices={ [
+								...( notice?.message
+									? [
+											{
+												id: GENERAL_NOTICE_ID,
+												content: notice.message,
+												className:
+													notice.type === 'error'
+														? 'oneaccess-error-notice'
+														: 'oneaccess-success-notice',
+											},
+									  ]
+									: [] ),
+								...userCreationNotices,
+							] }
+							onRemove={ ( id: string ) => {
+								if ( GENERAL_NOTICE_ID === id ) {
+									setNotice( null );
+									return;
+								}
+
+								setUserCreationNotices( ( current ) =>
+									current.filter( ( item ) => item.id !== id )
+								);
 							} }
 						/>
 					) }
