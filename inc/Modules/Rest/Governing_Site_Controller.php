@@ -460,8 +460,8 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 						'email'    => $email,
 					],
 					'headers' => [
-						'X-OneAccess-Token' => $api_key,
-						'Origin'            => get_site_url(),
+						'X-OneAccess-Token'    => $api_key,
+						'X-OneAccess-Site-URL' => get_site_url(),
 					],
 				]
 			);
