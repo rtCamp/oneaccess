@@ -940,17 +940,30 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 		foreach ( $roles as $key => $value ) {
 			$site_key = untrailingslashit( $key );
 			$site     = (array) ( $oneaccess_sites_info[ $site_key ] ?? [] );
-			$site_url = ! empty( $site['url'] ) ? trailingslashit( $site['url'] ) : '';
+			$site_url = ! empty( $site['url'] ) ? untrailingslashit( $site['url'] ) : '';
 			$api_key  = $site['api_key'] ?? '';
 			$new_role = $value;
 
-			// Skip duplicate or invalid sites.
-			if ( empty( $site_url ) || in_array( $site_url, $processed_sites, true ) ) {
+			// Report unknown sites instead of silently skipping them.
+			if ( empty( $site_url ) ) {
+				$error_log[] = [
+					'site_name' => $site_key,
+					'message'   => sprintf(
+						/* translators: %s is the site URL */
+						__( 'Site %s not found in OneAccess sites.', 'oneaccess' ),
+						esc_html( $site_key )
+					),
+				];
+				continue;
+			}
+
+			// Skip duplicate sites.
+			if ( in_array( $site_url, $processed_sites, true ) ) {
 				continue;
 			}
 			$processed_sites[] = $site_url;
 
-			$request_url = $site_url . '/wp-json/' . self::NAMESPACE . '/update-user';
+			$request_url = $this->build_api_endpoint( $site_url, 'update-user' );
 
 			$response = wp_safe_remote_post(
 				$request_url,

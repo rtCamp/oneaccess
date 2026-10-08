@@ -213,7 +213,7 @@ abstract class Abstract_REST_Controller extends \WP_REST_Controller implements R
 	 * @return string Full API endpoint URL.
 	 */
 	protected function build_api_endpoint( string $site_url, string $endpoint, string $rest_namespace = self::NAMESPACE ): string {
-		return esc_url_raw( trailingslashit( $site_url ) ) . '/wp-json/' . $rest_namespace . '/' . ltrim( $endpoint, '/' );
+		return untrailingslashit( esc_url_raw( $site_url ) ) . '/wp-json/' . $rest_namespace . '/' . ltrim( $endpoint, '/' );
 	}
 
 	/**
