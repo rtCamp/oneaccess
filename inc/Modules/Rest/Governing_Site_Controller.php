@@ -1417,7 +1417,7 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 			$processed_sites[] = $site_url;
 
 			$api_key   = $oneaccess_sites_info[ $site_url ]['api_key'] ?? '';
-			$site_name = $oneaccess_sites_info[ $site_url ]['name'] ?? '';
+			$site_name = ! empty( $oneaccess_sites_info[ $site_url ]['name'] ) ? $oneaccess_sites_info[ $site_url ]['name'] : $site_url;
 			if ( empty( $api_key ) ) {
 				$error_log[] = [
 					'site_name' => $site_name,
