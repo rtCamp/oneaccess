@@ -32,7 +32,7 @@ class Profile_Request implements Registrable {
 		add_action( 'edit_user_profile_update', [ $this, 'store_profile_update_request' ] );
 
 		// the current user is not available until pluggable.php has loaded, so defer.
-		add_action( 'init', [ $this, 'register_brand_admin_hooks' ] );
+		add_action( 'admin_init', [ $this, 'register_brand_admin_hooks' ] );
 	}
 
 	/**

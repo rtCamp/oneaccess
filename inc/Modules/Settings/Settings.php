@@ -268,24 +268,9 @@ final class Settings implements Registrable {
 	public static function get_shared_site_by_url( string $site_url ): ?array {
 		$brand_sites = self::get_shared_sites();
 
-		$normalized_url = self::normalize_site_url( $site_url );
+		$normalized_url = untrailingslashit( trim( $site_url ) );
 
-		foreach ( $brand_sites as $site ) {
-			if ( self::normalize_site_url( $site['url'] ) === $normalized_url ) {
-				return $site;
-			}
-		}
-
-		return null;
-	}
-
-	/**
-	 * Normalize a site URL for comparison.
-	 *
-	 * @param string $site_url The site URL.
-	 */
-	private static function normalize_site_url( string $site_url ): string {
-		return (string) preg_replace( '#^https?://#i', '', untrailingslashit( $site_url ) );
+		return $brand_sites[ $normalized_url ] ?? null;
 	}
 
 	/**
