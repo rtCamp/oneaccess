@@ -57,7 +57,7 @@ final class Admin implements Registrable {
 		add_menu_page(
 			__( 'OneAccess', 'oneaccess' ),
 			__( 'OneAccess', 'oneaccess' ),
-			'manage_options',
+			'oneaccess_manage_settings',
 			self::MENU_SLUG,
 			'__return_null',
 			self::SVG_LOGO_PATH,
@@ -74,7 +74,7 @@ final class Admin implements Registrable {
 			self::MENU_SLUG,
 			__( 'Settings', 'oneaccess' ),
 			__( 'Settings', 'oneaccess' ),
-			'manage_options',
+			'oneaccess_manage_settings',
 			self::SCREEN_ID,
 			[ $this, 'screen_callback' ],
 			999
@@ -83,9 +83,11 @@ final class Admin implements Registrable {
 
 	/**
 	 * Remove the default submenu added by WordPress.
+	 *
+	 * Kept on governing sites with brand sites, where Manage Users takes over the menu slug.
 	 */
 	public function remove_default_submenu(): void {
-		if ( Settings::is_governing_site() ) {
+		if ( Settings::is_governing_site() && ! empty( Settings::get_shared_sites() ) ) {
 			return;
 		}
 		remove_submenu_page( self::MENU_SLUG, self::MENU_SLUG );
