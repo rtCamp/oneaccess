@@ -131,7 +131,8 @@ class Brand_Site_Controller extends Abstract_REST_Controller {
 			$site_url . '/wp-json/' . self::NAMESPACE . '/reject-profile',
 			[
 				'headers' => [
-					'X-OneAccess-Token' => $api_key,
+					'X-OneAccess-Token'    => $api_key,
+					'X-OneAccess-Site-URL' => get_site_url(),
 				],
 				'body'    => [
 					'user_email'        => $user_email,
@@ -193,7 +194,8 @@ class Brand_Site_Controller extends Abstract_REST_Controller {
 			$site_url . '/wp-json/' . self::NAMESPACE . '/approve-profile',
 			[
 				'headers' => [
-					'X-OneAccess-Token' => $api_key,
+					'X-OneAccess-Token'    => $api_key,
+					'X-OneAccess-Site-URL' => get_site_url(),
 				],
 				'body'    => [
 					'user_id'    => $user_id,

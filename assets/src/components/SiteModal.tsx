@@ -114,6 +114,8 @@ const SiteModal = ( {
 					headers: {
 						'Content-Type': 'application/json',
 						'X-OneAccess-Token': formData.api_key,
+						'X-OneAccess-Site-URL':
+							window.OneAccessSettings.siteUrl,
 					},
 				}
 			);
