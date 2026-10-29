@@ -72,6 +72,7 @@ final class Assets implements Registrable {
 				'restUrl'  => esc_url( home_url( '/wp-json' ) ),
 				'setupUrl' => esc_url( admin_url( 'admin.php?page=oneaccess-settings' ) ),
 				'siteType' => Settings::get_site_type(),
+				'siteUrl'  => esc_url( get_site_url() ),
 			];
 		}
 
