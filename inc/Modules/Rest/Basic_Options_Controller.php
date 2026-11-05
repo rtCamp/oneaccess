@@ -33,7 +33,7 @@ class Basic_Options_Controller extends Abstract_REST_Controller {
 				[
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => [ $this, 'set_site_type' ],
-					'permission_callback' => [ self::class, 'permission_callback' ],
+					'permission_callback' => [ self::class, 'site_type_permission_callback' ],
 					'args'                => [
 						'site_type' => [
 							'required'          => true,
@@ -97,6 +97,20 @@ class Basic_Options_Controller extends Abstract_REST_Controller {
 				],
 			],
 		);
+	}
+
+	/**
+	 * Permission callback for setting the site type.
+	 *
+	 * Onboarding sets the site type before the OneAccess roles that grant
+	 * oneaccess_manage_settings exist, so the first choice needs manage_options.
+	 */
+	public static function site_type_permission_callback(): bool {
+		if ( empty( Settings::get_site_type() ) ) {
+			return current_user_can( 'manage_options' );
+		}
+
+		return self::permission_callback();
 	}
 
 	/**
