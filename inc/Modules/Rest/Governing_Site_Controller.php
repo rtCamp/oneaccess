@@ -19,6 +19,11 @@ use WP_REST_Server;
  */
 class Governing_Site_Controller extends Abstract_REST_Controller {
 	/**
+	 * Minimum number of characters accepted for a new user's password.
+	 */
+	public const MIN_PASSWORD_LENGTH = 8;
+
+	/**
 	 * {@inheritDoc}
 	 */
 	public function register_routes(): void {
@@ -224,9 +229,8 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 						'sanitize_callback' => 'sanitize_text_field',
 					],
 					'password' => [
-						'required'          => true,
-						'type'              => 'string',
-						'sanitize_callback' => 'sanitize_text_field',
+						'required' => true,
+						'type'     => 'string',
 					],
 					'sites'    => [
 						'required' => true,
@@ -355,11 +359,8 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 			);
 		}
 
-		// Get the user by email or login.
-		$user = get_user_by( 'login', $username );
-		if ( ! $user ) {
-			$user = get_user_by( 'email', $email );
-		}
+		// Match by email, the identity used across OneAccess; usernames may differ between sites.
+		$user = get_user_by( 'email', $email );
 		if ( ! $user ) {
 			return new \WP_REST_Response(
 				[
@@ -417,24 +418,35 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 			);
 		}
 
-		$response_data        = [];
-		$oneaccess_sites_info = Settings::get_shared_sites();
-		$processed_sites      = [];
-		$error_log            = [];
-		$user_delete_results  = [];
+		$response_data       = [];
+		$processed_sites     = [];
+		$error_log           = [];
+		$user_delete_results = [];
 
 		foreach ( $sites as $site ) {
 
 			// Skip duplicate or invalid sites.
 			if ( empty( $site['site_url'] ) || in_array( $site['site_url'], $processed_sites, true ) ) {
-				if ( ! empty( $site['site_url'] ) ) {
-					$processed_sites[] = $site['site_url'];
-				}
+				continue;
+			}
+			$processed_sites[] = $site['site_url'];
+
+			$site_info = Settings::get_shared_site_by_url( $site['site_url'] );
+			if ( null === $site_info ) {
+				$error_log[] = [
+					'site_name' => $site['site_url'],
+					'message'   => sprintf(
+						/* translators: %s is the site URL */
+						__( 'Site %s is not connected to OneAccess.', 'oneaccess' ),
+						esc_html( $site['site_url'] )
+					),
+				];
 				continue;
 			}
 
-			$request_url = $site['site_url'] . '/wp-json/' . self::NAMESPACE . '/delete-user';
-			$api_key     = $oneaccess_sites_info[ $site['site_url'] ]['api_key'] ?? '';
+			$site_name   = ! empty( $site_info['name'] ) ? $site_info['name'] : $site['site_url'];
+			$request_url = $site_info['url'] . '/wp-json/' . self::NAMESPACE . '/delete-user';
+			$api_key     = $site_info['api_key'];
 			$response    = wp_safe_remote_request(
 				$request_url,
 				[
@@ -444,18 +456,19 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 						'email'    => $email,
 					],
 					'headers' => [
-						'X-OneAccess-Token' => $api_key,
+						'X-OneAccess-Token'    => $api_key,
+						'X-OneAccess-Site-URL' => get_site_url(),
 					],
 				]
 			);
 
 			if ( is_wp_error( $response ) ) {
 				$error_log[] = [
-					'site_name' => $site['site_url'] ?? '',
+					'site_name' => $site_name,
 					'message'   => sprintf(
-						/* translators: %s is the site URL */
+						/* translators: %s is the site name */
 						__( 'Error deleting user from site %s.', 'oneaccess' ),
-						esc_html( $site['site_url'] ?? '' )
+						esc_html( $site_name )
 					),
 				];
 				continue;
@@ -464,21 +477,20 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 			$response_code = wp_remote_retrieve_response_code( $response );
 			if ( 200 !== $response_code ) {
 				$error_log[] = [
-					'site_name' => $site['site_url'] ?? '',
+					'site_name' => $site_name,
 					'message'   => sprintf(
-						/* translators: %s is the site URL */
+						/* translators: %s is the site name */
 						__( 'Failed to delete user from site %s.', 'oneaccess' ),
-						esc_html( $site['site_url'] ?? '' )
+						esc_html( $site_name )
 					),
 				];
-				$error_log[] = $response;
 				continue;
 			}
 
 			$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
-			if ( ! $response_body['success'] ) {
+			if ( ! is_array( $response_body ) || empty( $response_body['success'] ) ) {
 				$error_log[] = [
-					'site_name' => $site['site_url'] ?? '',
+					'site_name' => $site_name,
 					'message'   => $response_body['message'] ?? __( 'Failed to delete user from site.', 'oneaccess' ),
 				];
 				continue;
@@ -692,7 +704,7 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 		$email     = sanitize_email( $request->get_param( 'email' ) );
 		$username  = sanitize_text_field( $request->get_param( 'username' ) );
 		$full_name = sanitize_text_field( $request->get_param( 'fullName' ) );
-		$password  = sanitize_text_field( $request->get_param( 'password' ) );
+		$password  = (string) $request->get_param( 'password' );
 		$sites     = $request->get_param( 'sites' );
 
 		if ( empty( $email ) || empty( $username ) || empty( $full_name ) || empty( $password ) || empty( $sites ) ) {
@@ -703,6 +715,11 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 				],
 				400
 			);
+		}
+
+		$password_error = self::validate_password( $password );
+		if ( null !== $password_error ) {
+			return $password_error;
 		}
 
 		// Validate sites.
@@ -737,11 +754,9 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 
 			// Skip duplicate or invalid sites.
 			if ( empty( $site_url['url'] ) || in_array( $site_url['url'], $processed_sites, true ) ) {
-				if ( ! empty( $site_url['url'] ) ) {
-					$processed_sites[] = $site_url['url'];
-				}
 				continue;
 			}
+			$processed_sites[] = $site_url['url'];
 
 			$api_key     = $oneaccess_sites_info[ $url ]['api_key'] ?? '';
 			$user_role   = $site_url['role'] ?? 'subscriber';
@@ -759,7 +774,8 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 						'role'      => $user_role,
 					],
 					'headers' => [
-						'X-OneAccess-Token' => $api_key,
+						'X-OneAccess-Token'    => $api_key,
+						'X-OneAccess-Site-URL' => get_site_url(),
 					],
 				]
 			);
@@ -792,7 +808,7 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 
 			$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
 
-			if ( ! $response_body['success'] ) {
+			if ( ! is_array( $response_body ) || empty( $response_body['success'] ) ) {
 				$error_log[] = [
 					'site_name' => $site_url['url'] ?? '',
 					'message'   => $response_body['message'] ?? __( 'Failed to add user to site.', 'oneaccess' ),
@@ -806,14 +822,7 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 				'message' => __( 'User added successfully.', 'oneaccess' ),
 			];
 
-			$first_name = '';
-			$last_name  = '';
-
-			// split full name into first and last name.
-			$name_parts = explode( ' ', $full_name );
-
-			$first_name = $name_parts[0] ?? '';
-			$last_name  = isset( $name_parts[1] ) ? implode( ' ', array_slice( $name_parts, 1 ) ) : '';
+			[ $first_name, $last_name ] = self::split_full_name( $full_name );
 
 			$user_id   = isset( $response_body['data']['user_id'] ) ? absint( $response_body['data']['user_id'] ) : 0;
 			$user_role = isset( $response_body['data']['role'] ) ? sanitize_text_field( $response_body['data']['role'] ) : 'subscriber';
@@ -931,17 +940,30 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 		foreach ( $roles as $key => $value ) {
 			$site_key = untrailingslashit( $key );
 			$site     = (array) ( $oneaccess_sites_info[ $site_key ] ?? [] );
-			$site_url = ! empty( $site['url'] ) ? trailingslashit( $site['url'] ) : '';
+			$site_url = ! empty( $site['url'] ) ? untrailingslashit( $site['url'] ) : '';
 			$api_key  = $site['api_key'] ?? '';
 			$new_role = $value;
 
-			// Skip duplicate or invalid sites.
-			if ( empty( $site_url ) || in_array( $site_url, $processed_sites, true ) ) {
+			// Report unknown sites instead of silently skipping them.
+			if ( empty( $site_url ) ) {
+				$error_log[] = [
+					'site_name' => $site_key,
+					'message'   => sprintf(
+						/* translators: %s is the site URL */
+						__( 'Site %s not found in OneAccess sites.', 'oneaccess' ),
+						esc_html( $site_key )
+					),
+				];
+				continue;
+			}
+
+			// Skip duplicate sites.
+			if ( in_array( $site_url, $processed_sites, true ) ) {
 				continue;
 			}
 			$processed_sites[] = $site_url;
 
-			$request_url = $site_url . '/wp-json/' . self::NAMESPACE . '/update-user';
+			$request_url = $this->build_api_endpoint( $site_url, 'update-user' );
 
 			$response = wp_safe_remote_post(
 				$request_url,
@@ -953,7 +975,8 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 						'role'     => $new_role,
 					],
 					'headers' => [
-						'X-OneAccess-Token' => $api_key,
+						'X-OneAccess-Token'    => $api_key,
+						'X-OneAccess-Site-URL' => get_site_url(),
 					],
 				]
 			);
@@ -986,7 +1009,7 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 
 			$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
 
-			if ( ! $response_body['success'] ) {
+			if ( ! is_array( $response_body ) || empty( $response_body['success'] ) ) {
 				$error_log[] = [
 					'site_name' => $site_url,
 					'message'   => $response_body['message'] ?? __( 'Failed to update user role on site.', 'oneaccess' ),
@@ -1029,7 +1052,7 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 	public function create_user( \WP_REST_Request $request ): \WP_REST_Response {
 		$username  = sanitize_user( $request->get_param( 'username' ) );
 		$email     = sanitize_email( $request->get_param( 'email' ) );
-		$password  = sanitize_text_field( $request->get_param( 'password' ) );
+		$password  = (string) $request->get_param( 'password' );
 		$full_name = sanitize_text_field( $request->get_param( 'full_name' ) );
 		$role      = sanitize_text_field( $request->get_param( 'role' ) );
 
@@ -1041,6 +1064,11 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 				],
 				400
 			);
+		}
+
+		$password_error = self::validate_password( $password );
+		if ( null !== $password_error ) {
+			return $password_error;
 		}
 
 		if ( ! is_email( $email ) ) {
@@ -1076,7 +1104,7 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 		}
 
 		// Create the user.
-		$user_id = wp_create_user( $username, $password, $email );
+		$user_id = wp_create_user( $username, wp_slash( $password ), $email );
 		if ( is_wp_error( $user_id ) ) {
 			return new \WP_REST_Response(
 				[
@@ -1093,14 +1121,16 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 			$role = 'subscriber';
 		}
 
+		[ $first_name, $last_name ] = self::split_full_name( $full_name );
+
 		// Set the user's full name and role.
 		wp_update_user(
 			[
 				'ID'            => $user_id,
 				'display_name'  => $full_name,
 				'user_nicename' => sanitize_title( $full_name ),
-				'first_name'    => explode( ' ', $full_name )[0] ?: '',
-				'last_name'     => explode( ' ', $full_name )[1] ?: '',
+				'first_name'    => $first_name,
+				'last_name'     => $last_name,
 				'role'          => $role ?: 'subscriber',
 			]
 		);
@@ -1364,6 +1394,10 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 				400
 			);
 		}
+		$password_error = self::validate_password( (string) $userdata['password'] );
+		if ( null !== $password_error ) {
+			return $password_error;
+		}
 		if ( ! isset( $userdata['fullName'] ) || empty( $userdata['fullName'] ) ) {
 			return new \WP_REST_Response(
 				[
@@ -1389,7 +1423,7 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 			$processed_sites[] = $site_url;
 
 			$api_key   = $oneaccess_sites_info[ $site_url ]['api_key'] ?? '';
-			$site_name = $oneaccess_sites_info[ $site_url ]['name'] ?? '';
+			$site_name = ! empty( $oneaccess_sites_info[ $site_url ]['name'] ) ? $oneaccess_sites_info[ $site_url ]['name'] : $site_url;
 			if ( empty( $api_key ) ) {
 				$error_log[] = [
 					'site_name' => $site_name,
@@ -1416,7 +1450,8 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 						'role'      => $userdata['role'] ?? 'subscriber',
 					],
 					'headers' => [
-						'X-OneAccess-Token' => $api_key,
+						'X-OneAccess-Token'    => $api_key,
+						'X-OneAccess-Site-URL' => get_site_url(),
 					],
 				]
 			);
@@ -1433,7 +1468,22 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 				continue;
 			}
 
+			$response_code = wp_remote_retrieve_response_code( $response );
 			$response_body = json_decode( wp_remote_retrieve_body( $response ), true );
+
+			if ( ! is_array( $response_body ) ) {
+				$error_log[] = [
+					'site_name' => $site_name,
+					'message'   => sprintf(
+						/* translators: 1: site name, 2: HTTP status code */
+						__( 'Unreadable response from site %1$s (HTTP %2$d). The user may have been created there; please verify before retrying.', 'oneaccess' ),
+						$site_name,
+						(int) $response_code
+					),
+				];
+				continue;
+			}
+
 			if ( empty( $response_body['success'] ) ) {
 				$error_log[] = [
 					'site_name' => $site_name,
@@ -1464,5 +1514,53 @@ class Governing_Site_Controller extends Abstract_REST_Controller {
 			],
 			200
 		);
+	}
+
+	/**
+	 * Validate a new user's password.
+	 *
+	 * @param string $password The password to validate.
+	 *
+	 * @return ?\WP_REST_Response Error response if invalid, null otherwise.
+	 */
+	private static function validate_password( string $password ): ?\WP_REST_Response {
+		if ( mb_strlen( $password ) < self::MIN_PASSWORD_LENGTH ) {
+			return new \WP_REST_Response(
+				[
+					'success' => false,
+					'message' => sprintf(
+						/* translators: %d is the minimum number of characters */
+						__( 'Password must be at least %d characters long.', 'oneaccess' ),
+						self::MIN_PASSWORD_LENGTH
+					),
+				],
+				400
+			);
+		}
+
+		if ( str_contains( $password, '\\' ) ) {
+			return new \WP_REST_Response(
+				[
+					'success' => false,
+					'message' => __( 'Passwords cannot contain the "\\" character.', 'oneaccess' ),
+				],
+				400
+			);
+		}
+
+		return null;
+	}
+
+	/**
+	 * Split a full name into first and last name on the first run of whitespace.
+	 *
+	 * @param string $full_name The full name.
+	 *
+	 * @return array{0: string, 1: string} First and last name.
+	 */
+	private static function split_full_name( string $full_name ): array {
+		$name_parts = preg_split( '/\s+/', trim( $full_name ), 2 ) ?: [];
+
+		return [ $name_parts[0] ?? '', $name_parts[1] ?? '' ];
 	}
 }

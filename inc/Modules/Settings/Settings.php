@@ -222,7 +222,7 @@ final class Settings implements Registrable {
 	 */
 
 	/**
-	 * Get brand sites configured for this governing site, keyed by the (trailing-slash) URL.
+	 * Get brand sites configured for this governing site, keyed by the site URL.
 	 *
 	 * @return array<string,array{
 	 *  api_key: string,
@@ -240,8 +240,7 @@ final class Settings implements Registrable {
 				continue;
 			}
 
-			// Always use a trailing-slash URL.
-			$url = trailingslashit( $brand['url'] );
+			$url = untrailingslashit( $brand['url'] );
 
 			$brands_to_return[ $url ] = [
 				'api_key' => $brand['api_key'] ?? '',
@@ -269,7 +268,7 @@ final class Settings implements Registrable {
 	public static function get_shared_site_by_url( string $site_url ): ?array {
 		$brand_sites = self::get_shared_sites();
 
-		$normalized_url = trailingslashit( $site_url );
+		$normalized_url = untrailingslashit( trim( $site_url ) );
 
 		return $brand_sites[ $normalized_url ] ?? null;
 	}
