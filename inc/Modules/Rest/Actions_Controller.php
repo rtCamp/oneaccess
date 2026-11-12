@@ -456,8 +456,9 @@ class Actions_Controller extends Abstract_REST_Controller {
 
 		$args = [
 			'headers' => [
-				'X-OneAccess-Token' => $api_key,
-				'Cache-Control'     => 'no-cache',
+				'X-OneAccess-Token'    => $api_key,
+				'X-OneAccess-Site-URL' => get_site_url(),
+				'Cache-Control'        => 'no-cache',
 			],
 			'timeout' => 30, // phpcs:ignore WordPressVIPMinimum.Performance.RemoteRequestTimeout.timeout_timeout -- profile requests fetching take time.
 		];
@@ -1000,7 +1001,8 @@ class Actions_Controller extends Abstract_REST_Controller {
 				trailingslashit( esc_url_raw( $site_url ) ) . 'wp-json/' . self::NAMESPACE . '/rebuild-brand-sites-index',
 				[
 					'headers' => [
-						'X-OneAccess-Token' => $api_key,
+						'X-OneAccess-Token'    => $api_key,
+						'X-OneAccess-Site-URL' => get_site_url(),
 					],
 					'timeout' => 30, // phpcs:ignore WordPressVIPMinimum.Performance.RemoteRequestTimeout.timeout_timeout -- rebuilding index take time.
 				]
