@@ -100,6 +100,12 @@ interface GenericApiResponse {
 	message?: string;
 }
 
+interface DeleteUserResponse extends GenericApiResponse {
+	data?: {
+		error_log?: Array< { site_name?: string; message?: string } >;
+	};
+}
+
 const SharedUsers = ( {
 	availableSites,
 }: {
@@ -384,30 +390,56 @@ const SharedUsers = ( {
 				}
 			);
 
-			if ( ! response.ok ) {
-				throw new Error( 'Failed to delete user from sites' );
+			const data = ( await response
+				.json()
+				.catch( () => null ) ) as DeleteUserResponse | null;
+
+			if ( ! response.ok || ! data ) {
+				setNotice( {
+					type: 'error',
+					message:
+						data?.message ||
+						__( 'Failed to delete user.', 'oneaccess' ),
+				} );
+				return;
 			}
 
-			const data = ( await response.json() ) as GenericApiResponse;
-			if ( ! data.success ) {
-				throw new Error(
-					data.message || 'Failed to delete user from sites'
-				);
+			if ( data.success ) {
+				setNotice( {
+					type: 'success',
+					message: __( 'User deleted successfully.', 'oneaccess' ),
+				} );
+				return;
 			}
+
+			// Partial failure: list each site's error after the summary.
+			const siteErrors = ( data.data?.error_log || [] )
+				.filter( ( failure ) => !! failure.message )
+				.map( ( { site_name: siteName = '', message = '' } ) =>
+					! siteName || message.includes( siteName )
+						? message
+						: `${ siteName }: ${ message }`
+				);
 
 			setNotice( {
-				type: 'success',
-				message: __( 'User deleted successfully.', 'oneaccess' ),
+				type: 'error',
+				message: [
+					data.message ||
+						__(
+							'User could not be deleted from some sites.',
+							'oneaccess'
+						),
+					...siteErrors,
+				].join( ' ' ),
 			} );
-
-			// Refresh users list
-			await fetchUsers();
 		} catch {
 			setNotice( {
 				type: 'error',
 				message: __( 'Failed to delete user.', 'oneaccess' ),
 			} );
 		} finally {
+			// Refresh even on failure, since some sites may have been deleted.
+			await fetchUsers();
 			setIsDeletingUser( false );
 			setShowUserDeletionModal( false );
 			setSelectedUser( null );

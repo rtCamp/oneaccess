@@ -30,21 +30,21 @@ final class RestTest extends TestCase {
 	}
 
 	/**
-	 * Tests that the OneAccess token header is added once.
+	 * Tests that the OneAccess headers are added once.
 	 */
-	public function test_allowed_cors_headers_adds_OneAccess_token_once(): void {
+	public function test_allowed_cors_headers_adds_OneAccess_headers_once(): void {
 		$rest = new Rest();
 
 		$this->assertSame(
-			[ 'X-WP-Nonce', 'X-OneAccess-Token' ],
+			[ 'X-WP-Nonce', 'X-OneAccess-Token', 'X-OneAccess-Site-URL' ],
 			$rest->allowed_cors_headers( [ 'X-WP-Nonce' ] ),
-			'Token should be added to headers'
+			'Headers should be added'
 		);
 
 		$this->assertSame(
-			[ 'X-OneAccess-Token' ],
-			$rest->allowed_cors_headers( [ 'X-OneAccess-Token' ] ),
-			'Token should not be readded'
+			[ 'X-OneAccess-Token', 'X-OneAccess-Site-URL' ],
+			$rest->allowed_cors_headers( [ 'X-OneAccess-Token', 'X-OneAccess-Site-URL' ] ),
+			'Headers should not be readded'
 		);
 	}
 }
