@@ -53,10 +53,10 @@ abstract class Abstract_REST_Controller extends \WP_REST_Controller implements R
 	}
 
 	/**
-	 * Permission callback to check if the user has manage_options capability.
+	 * Permission callback to check if the user can manage OneAccess settings.
 	 */
 	public static function permission_callback(): bool {
-		return current_user_can( 'manage_options' );
+		return current_user_can( 'oneaccess_manage_settings' );
 	}
 
 	/**
@@ -70,7 +70,7 @@ abstract class Abstract_REST_Controller extends \WP_REST_Controller implements R
 	public function check_api_permissions( $request ) {
 		// check if the request is from same site.
 		if ( Settings::is_governing_site() ) {
-			return current_user_can( 'manage_options' );
+			return self::permission_callback();
 		}
 
 		// See if the `X_ONEACCESS_TOKEN` header is present.
